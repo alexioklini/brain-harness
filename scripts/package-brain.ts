@@ -4,10 +4,13 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import { verifyRuntimeClosure } from './verify-runtime-closure.ts'
 import { pnpmInvocation, restoreLegacyHoists } from './executable-packaging.ts'
 import { materializeStagedLinks, deduplicateStagedWorkspacePackages } from './build-exe-for-python-sdk-staging.ts'
 
 const root = resolve(import.meta.dirname, '..')
+const closure = await verifyRuntimeClosure(root, 'python/sdk-runtime/package.json', false)
+if (closure.failures.length) throw new Error(closure.failures.join('\n'))
 const commit = execFileSync('python3', ['scripts/release_guard.py'], { cwd: root, encoding: 'utf8' }).trim()
 const destination = join(root, '.artifacts', `brain-${commit}`)
 const run = (...args: string[]): void => {
