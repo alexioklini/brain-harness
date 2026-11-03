@@ -23,7 +23,7 @@ kind: package-reference
 
 配置 `baseURL`、凭据引用、`timeoutMs` 和 `maxResponseBytes`。账号必须使用 Router 的 `automatic` 工具执行模式。Harness 不提供本地工具声明；中央工具选择、执行及后续调用由 LLMRouter 负责。存在本地工具声明时，请求在推理前失败。启用 `gatewayContext` 时，正常系统提示组装从网关读取已授权的项目及研究指令，并将其记录到会话中。请求携带 Harness 会话标识，供中央工具和 PII 使用，并采用 Brain 上下文策略。
 
-启用 `gatewayContext` 后，插件按活动代理记录当前领取的用户问题。项目检索在提示组装期间执行；返回的摘录作为不可信来源数据写入已记录的 `brain:project-evidence` 用户上下文快照。完整用户问题保持不变。代理销毁后释放问题引用。
+启用 `gatewayContext` 后，插件按活动代理记录当前领取的用户问题。项目检索在提示组装期间执行；返回的摘录作为不可信来源数据写入已记录的 `brain:project-evidence` 用户上下文快照。该必需上下文在禁用可选运行时上下文时仍保留；取消选择项目会清除当前证据。完整用户问题保持不变。代理销毁后释放问题和证据引用。
 
 <a id="model-experience"></a>
 ## 模型体验
@@ -46,7 +46,7 @@ kind: package-reference
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- 适配器不负责 Web 身份验证。部署必须按账号隔离凭据和会话存储。Brain 网关负责项目授权、MoA 路由和隐私访问。中央定时任务管理尚未完成。真实功能验收仍在进行。
+- 适配器不负责 Web 身份验证。部署必须按账号隔离凭据和会话存储。Brain 网关负责项目授权、MoA 路由和隐私访问。Brain 界面管理中央定时任务。真实双账户隔离验收仍待完成。
 
 <a id="dev-note"></a>
 ### 开发备注

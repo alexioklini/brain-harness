@@ -23,7 +23,7 @@ The `brain` provider reads the authenticated Router catalog for model selection 
 
 Configure `baseURL`, a credential reference, `timeoutMs` and `maxResponseBytes`. The account must use Router `automatic` tool execution. Harness supplies no local tool declarations; LLMRouter owns central selection, execution and continuation. Local tool declarations fail before inference. With `gatewayContext` enabled, the normal system-prompt assembly reads authorized project and research instructions from the gateway and records them in the session. Requests carry the Harness session identifier for central tools and PII and use the Brain context policy.
 
-With `gatewayContext`, the plugin tracks the current claimed user question per live agent. Project retrieval runs during prompt assembly; returned excerpts enter the logged `brain:project-evidence` user-context snapshot as untrusted source data. The full user question remains unchanged. Agent disposal releases the question reference.
+With `gatewayContext`, the plugin tracks the current claimed user question per live agent. Project retrieval runs during prompt assembly; returned excerpts enter the logged `brain:project-evidence` user-context snapshot as untrusted source data. This required context remains available when optional runtime context is disabled; deselecting the project clears the current evidence. The full user question remains unchanged. Agent disposal releases question and evidence references.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -46,7 +46,7 @@ Transport metadata does not change the model-visible prefix; current Router cont
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- The adapter is not a web authentication system. A deployment must isolate credentials and session storage by account. The Brain gateway owns project authorization, MoA routing and privacy access. Central scheduled-task management remains unfinished. Live feature acceptance is pending.
+- The adapter is not a web authentication system. A deployment must isolate credentials and session storage by account. The Brain gateway owns project authorization, MoA routing and privacy access. The Brain UI manages central scheduled tasks. Live two-account separation acceptance remains pending.
 
 <a id="dev-note"></a>
 ### Dev Note

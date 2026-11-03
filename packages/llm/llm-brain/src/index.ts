@@ -129,6 +129,14 @@ export function apply(ctx: Context, config: Config): void {
     maxResponseBytes: config.maxResponseBytes, credential })
   if (config.gatewayContext) {
     const queries = new WeakMap<object, string>()
+    const evidence = new WeakMap<object, string>()
+    ctx.systemPrompt.context({
+      name: 'brain:project-evidence',
+      order: ctx.systemPrompt.getContextOrder('WEB_SURFACE'),
+      required: true,
+      interpolate: false,
+      text: context => context.agent ? evidence.get(context.agent) ?? '' : '',
+    })
     ctx.on('agent/inbox/claimed', ({ agent, message }) => {
       if (message.source.kind !== 'user') return
       const query = message.content.flatMap(block => block.type === 'text' ? [block.text] : []).join('\n')
@@ -140,11 +148,13 @@ export function apply(ctx: Context, config: Config): void {
       const data = await client.request('/brain/context/' + encodeURIComponent(String(context.agent.id)),
         { query: queries.get(context.agent) ?? '' }, context.signal)
       if (typeof data.instructions !== 'string' || typeof data.evidence !== 'string') throw new Error('Brain conversation context unavailable')
+      const projectEvidence = data.evidence
+      evidence.set(context.agent, projectEvidence)
       return { ...assembly,
         sections: [...assembly.sections, ...data.instructions
           ? [{ name: 'brain:conversation', text: data.instructions, interpolate: false }] : []],
-        contexts: [...assembly.contexts, ...data.evidence
-          ? [{ name: 'brain:project-evidence', text: data.evidence, interpolate: false }] : []],
+        contexts: assembly.contexts.map(entry => entry.name === 'brain:project-evidence'
+          ? { ...entry, text: projectEvidence } : entry),
       }
     })
   }
