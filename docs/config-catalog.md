@@ -1965,8 +1965,8 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-llm-brain`
 
-- `inject`: `llm` · `credentials`
-- `source`: [`packages/llm/llm-brain/src/index.ts:20`](../packages/llm/llm-brain/src/index.ts)
+- `inject`: `llm` · `credentials` · `systemPrompt`
+- `source`: [`packages/llm/llm-brain/src/index.ts:23`](../packages/llm/llm-brain/src/index.ts)
 
 ```ts config-catalog
 /** Deployment connection and request bounds. */
@@ -1979,6 +1979,8 @@ export interface Config {
   timeoutMs: number
   /** Maximum bytes in a JSON service reply. */
   maxResponseBytes: number
+  /** Read account-owned project and research instructions from the Brain gateway. */
+  gatewayContext?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-brain -->
@@ -4978,6 +4980,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-agent-team` | — | [`packages/client/ui-agent-team/src/index.ts`](../packages/client/ui-agent-team/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-approval` | — | [`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-brain` | — | [`packages/client/ui-brain/src/index.ts`](../packages/client/ui-brain/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-brand-official` | — | [`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-chat` | — | [`packages/client/ui-chat/src/index.ts`](../packages/client/ui-chat/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-commands` | — | [`packages/client/ui-commands/src/index.ts`](../packages/client/ui-commands/src/index.ts) |

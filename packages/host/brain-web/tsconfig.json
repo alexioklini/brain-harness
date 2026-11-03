@@ -34,6 +34,12 @@
     },
     {
       "path": "../../sandbox/sandbox"
+    },
+    {
+      "path": "../../util/atomic-write"
+    },
+    {
+      "path": "../../api/gateway/tsconfig.host.json"
     }
   ]
 }

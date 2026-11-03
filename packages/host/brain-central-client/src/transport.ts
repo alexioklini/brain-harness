@@ -51,29 +51,40 @@ export class JSONTransport {
       await response.body?.cancel()
       throw new BrainServiceError(response.status)
     }
-    const reader = response.body?.getReader()
-    if (!reader) throw new Error('Empty central service response')
-    const chunks: Uint8Array[] = []
-    let length = 0
-    try {
-      for (;;) {
-        const chunk = await reader.read()
-        if (chunk.done) break
-        length += chunk.value.byteLength
-        if (length > this.connection.maxResponseBytes) throw new Error('Central response exceeds size limit')
-        chunks.push(chunk.value)
-      }
-    } finally {
-      await reader.cancel()
-      reader.releaseLock()
-    }
-    const bytes = new Uint8Array(length)
-    let offset = 0
-    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
-    let value: unknown
-    try { value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) }
-    catch { throw new Error('Invalid central service JSON') }
+    const value = await readBoundedJSON(response, this.connection.maxResponseBytes)
+
     return { data: value, headers: response.headers }
   }
 
+}
+
+/** Decode a bounded UTF-8 JSON response and always release its reader.
+ * @param response - Service response with a body.
+ * @param limit - Maximum response bytes.
+ * @returns Parsed untrusted JSON value.
+ */
+export async function readBoundedJSON(response: Response, limit: number): Promise<unknown> {
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('Empty central service response')
+  const chunks: Uint8Array[] = []
+  let length = 0
+  try {
+    for (;;) {
+      const chunk = await reader.read()
+      if (chunk.done) break
+      length += chunk.value.byteLength
+      if (length > limit) throw new Error('Central response exceeds size limit')
+      chunks.push(chunk.value)
+    }
+  } finally {
+    await reader.cancel()
+    reader.releaseLock()
+  }
+  const bytes = new Uint8Array(length)
+  let offset = 0
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+  let value: unknown
+  try { value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) }
+  catch { throw new Error('Invalid central service JSON') }
+  return value
 }

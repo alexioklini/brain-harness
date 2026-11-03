@@ -343,6 +343,7 @@
       "@deepseek-ai/dsh-client-ui-jobs/client": ["./packages/client/ui-jobs/src/client/index.ts"],
       "@deepseek-ai/dsh-client-ui-schedule": ["./packages/client/ui-schedule/src"],
       "@deepseek-ai/dsh-client-ui-schedule/client": ["./packages/client/ui-schedule/src/client/index.ts"],
+      "@deepseek-ai/dsh-client-ui-brain": ["./packages/client/ui-brain/src"],
       "@deepseek-ai/dsh-client-ui-plan": ["./packages/client/ui-plan/src"],
       "@deepseek-ai/dsh-client-ui-user-questions": ["./packages/client/ui-user-questions/src"],
       "@deepseek-ai/dsh-client-ui-trajectory": ["./packages/client/ui-trajectory/src"],

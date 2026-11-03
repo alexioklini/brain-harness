@@ -1,18 +1,21 @@
 /** Brain login, user runtime isolation and central-service request authorization. @module */
-import { randomBytes, createHash } from 'node:crypto'
+import { randomBytes, randomUUID, createHash } from 'node:crypto'
+import type { IncomingMessage } from 'node:http'
+import { REMOTE_STREAM_MUX_PATH } from '@deepseek-ai/dsh-api-gateway/stream-protocol'
 import { dirname } from 'node:path'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-sandbox'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import { BrainAccountClient, BrainServiceError, centralObject } from '@deepseek-ai/dsh-brain-central-client'
+import { BrainAccountClient, BrainServiceError, centralObject, readBoundedJSON } from '@deepseek-ai/dsh-brain-central-client'
 import type { BrainAccountSession } from '@deepseek-ai/dsh-brain-central-client'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { serveStatic } from '@deepseek-ai/dsh-host-frontend-static'
+import { ConversationStore, conversationPreferences } from './preferences.ts'
 import { UserWorkers } from './workers.ts'
 import type { GatewayConfig, UserWorker } from './types.ts'
 import { basicCredentials } from './basic.ts'
-import { body, json, proxy, relay } from './http.ts'
+import { body, json, proxy, proxyUpgrade, relay, relayResponses } from './http.ts'
 
 /** Gateway deployment configuration. */
 export const Config = z.object({
@@ -32,7 +35,7 @@ export const name = 'brain-web'
 /** Host services required before accepting requests. */
 export const inject = ['webServer', 'subprocess', 'credentials', 'sandbox']
 
-interface Login { account: BrainAccountSession; worker: UserWorker; expires: number }
+interface Login { account: BrainAccountSession; worker: UserWorker; expires: number; cancellation: AbortController }
 const cookieName = '__Host-brain-harness'
 const hash = (value: string): string => createHash('sha256').update(value).digest('hex')
 
@@ -55,10 +58,63 @@ export function apply(ctx: Context, config: GatewayConfig): void {
   const accounts = new BrainAccountClient({ baseURL: config.brainURL,
     timeoutMs: config.requestTimeoutMs, maxResponseBytes: config.maxBodyBytes })
   const workers = new UserWorkers(ctx, config, () => ctx.webServer.getOrigin())
+  const conversations = new ConversationStore(config.storageRoot, config.maxBodyBytes)
   const logins = new Map<string, Login>()
   const credential = credentialRef(config.routerCredential)
+  const closeLogin = (login: Login): void => {
+    login.cancellation.abort()
+    login.account.close()
+  }
+  const authenticate = async (req: IncomingMessage, signal: AbortSignal):
+  Promise<{ login: Login | undefined; key: string | undefined }> => {
+    const basic = basicCredentials(req.headers.authorization)
+    const cookies = (req.headers.cookie ?? '').split(';').map(value => value.trim()).filter(value => value.startsWith(cookieName + '='))
+    const token = cookies.length === 1 ? cookies[0]?.slice(cookieName.length + 1) : undefined
+    const key = basic ? 'basic-' + hash(req.headers.authorization ?? '') : token ? hash(token) : undefined
+    let login = key ? logins.get(key) : undefined
+    if (login && login.expires <= Date.now()) {
+      closeLogin(login)
+      if (key) logins.delete(key)
+      login = undefined
+    }
+    if (!login && basic && key) {
+      if (logins.size >= config.maxLogins) throw new BrainServiceError(503)
+      const account = await accounts.login(basic.username, basic.password, signal)
+      let worker: UserWorker
+      try {
+        worker = await workers.acquire(account)
+        if (logins.size >= config.maxLogins) throw new BrainServiceError(503)
+      } catch (error) { account.close(); throw error }
+      login = { account, worker, expires: Date.now() + config.sessionMs, cancellation: new AbortController() }
+      logins.set(key, login)
+    }
+    return { login, key }
+  }
+  ctx.effect(() => ctx.webServer.registerUpgrade({ path: REMOTE_STREAM_MUX_PATH, handler: async (req, socket, head) => {
+    const reject = (status: number): void => { socket.end(`HTTP/1.1 ${status} Rejected\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`) }
+    const cancellation = new AbortController()
+    const closed = (): void => { cancellation.abort() }
+    socket.once('close', closed)
+    socket.once('error', closed)
+    try {
+      if (req.headers.host !== publicURL.host || req.headers.origin !== publicURL.origin) { reject(403); return }
+      const signal = AbortSignal.any([cancellation.signal, AbortSignal.timeout(config.requestTimeoutMs)])
+      const { login } = await authenticate(req, signal)
+      if (!login) { reject(401); return }
+      await login.account.authorize('web-stream', undefined, signal)
+      login.worker.account = login.account
+      await proxyUpgrade(req, socket, head, login.worker, AbortSignal.any([
+        signal, login.cancellation.signal, AbortSignal.timeout(Math.max(1, login.expires - Date.now())),
+      ]))
+    } catch (error) {
+      if (!socket.destroyed) reject(error instanceof BrainServiceError ? error.status : 502)
+    } finally {
+      socket.off('close', closed)
+      socket.off('error', closed)
+    }
+  } }))
   ctx.effect(() => async () => {
-    for (const login of logins.values()) login.account.close()
+    for (const login of logins.values()) closeLogin(login)
     logins.clear()
     await workers.close()
   })
@@ -75,6 +131,25 @@ export function apply(ctx: Context, config: GatewayConfig): void {
         const worker = await workers.byToken(req.headers.authorization?.replace(/^Bearer /, '') ?? '')
         if (!worker) { json(res, 401, { error: 'Sign in required' }); return }
         const path = url.pathname.slice('/_brain/router/'.length)
+        if (path.startsWith('v1/brain/context/')) {
+          if (req.method !== 'GET' || url.search) { json(res, 405, { error: 'Method not allowed' }); return }
+          const chat = decodeURIComponent(path.slice('v1/brain/context/'.length))
+          const preferences = await conversations.get(worker.account.storageKey, chat)
+          await worker.account.authorize(chat, preferences.project ?? undefined, signal)
+          const instructions: string[] = []
+          if (preferences.project) {
+            const project = centralObject(await worker.account.request('/api/projekte/' + preferences.project, undefined, signal))
+            if (typeof project.anweisungen !== 'string') throw new Error('Project instructions unavailable')
+            if (project.anweisungen) instructions.push(project.anweisungen)
+          }
+          if (preferences.mode === 'research') instructions.push(
+            'The user selected deep research. Break the question into research questions. Use the currently available central tools to search for evidence and read relevant sources. ' +
+            'Compare independent primary sources, check dates and conflicting claims, and follow important gaps with additional searches. ' +
+            'Write a synthesis with citations to the sources actually read. Distinguish confirmed facts, inferences and unresolved questions. ' +
+            'If a required search or source-reading capability is unavailable, report that limitation; do not claim to have researched without evidence.')
+          json(res, 200, { instructions: instructions.join('\n\n') })
+          return
+        }
         if (!['v1/models', 'v1/tools/policy', 'v1/responses'].includes(path)) {
           json(res, 404, { error: 'Not found' }); return
         }
@@ -85,32 +160,58 @@ export function apply(ctx: Context, config: GatewayConfig): void {
         const metadata = payload?.metadata === undefined ? {} : centralObject(payload.metadata)
         const chat = metadata.llmrouter_pii_session
         if (payload && (typeof chat !== 'string' || !chat)) { json(res, 400, { error: 'Chat required' }); return }
-        const scope = await worker.account.authorize(typeof chat === 'string' ? chat : 'catalog', undefined, signal)
+        const turn = randomUUID()
+        const tracked = payload && typeof chat === 'string' && metadata.brain_request_purpose === undefined
+        const preferences = await conversations.get(worker.account.storageKey, typeof chat === 'string' ? chat : 'catalog')
+        const scope = await worker.account.authorize(typeof chat === 'string' ? chat : 'catalog', preferences.project ?? undefined, signal)
         if (payload) {
           if (payload.previous_response_id || payload.conversation || payload.background) throw new Error('Explicit chat history required')
           payload.tools = []
           payload.store = false
           delete payload.client_metadata
-          payload.metadata = { llmrouter_pii_session: scope.session, llmrouter_tools_session: scope.session,
+          payload.metadata = { llmrouter_pii_turn: turn, llmrouter_pii_session: scope.session, llmrouter_tools_session: scope.session,
             llmrouter_tools_principal: scope.principal, llmrouter_tools_context: scope.context,
             llmrouter_rag_principal: scope.principal, llmrouter_rag_context: JSON.stringify(scope.context),
-            llmrouter_pii_source: 'brain-harness', llmrouter_context_policy: 'brain-v1' }
+            llmrouter_pii_source: 'brain-harness', llmrouter_context_policy: 'brain-v1',
+            ...preferences.mode === 'moa' ? { llmrouter_moa: true } : {} }
         }
         const key = (await ctx.credentials.resolve(credential))?.value
         if (!key) throw new Error('Router credential unavailable')
         const target = new URL(path, routerURL)
-        const response = await fetch(target, { method: payload ? 'POST' : 'GET', redirect: 'error', signal,
-          headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json',
-            'x-rag-principal': scope.principal, 'x-rag-context': JSON.stringify(scope.context) },
-          ...payload ? { body: JSON.stringify(payload) } : {} })
-        await relay(response, res, signal)
+        if (tracked) await conversations.recordTools(worker.account.storageKey, chat, { turn, status: 'running', calls: [] }, signal)
+        try {
+          const response = await fetch(target, { method: payload ? 'POST' : 'GET', redirect: 'error', signal,
+            headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json',
+              'x-rag-principal': scope.principal, 'x-rag-context': JSON.stringify(scope.context) },
+            ...payload ? { body: JSON.stringify(payload) } : {} })
+          await relayResponses(response, res, signal, config.maxBodyBytes)
+          if (tracked) {
+            const traceURL = new URL('v1/tools/call-traces', routerURL)
+            traceURL.searchParams.set('session_id', scope.session)
+            traceURL.searchParams.set('turn_id', turn)
+            const trace = await fetch(traceURL, { headers: { authorization: `Bearer ${key}` }, redirect: 'error', signal })
+            if (!trace.ok) {
+              await trace.body?.cancel()
+              await conversations.recordTools(worker.account.storageKey, chat, { turn, status: 'failed', calls: [] }, signal)
+            } else {
+              const data = centralObject(await readBoundedJSON(trace, config.maxBodyBytes))
+              if (!Array.isArray(data.calls)) throw new Error('Invalid central-tool evidence')
+              await conversations.recordTools(worker.account.storageKey, chat, { turn, status: 'complete', calls: data.calls }, signal)
+            }
+          }
+        } catch (error) {
+          // Evidence failure must not leave a completed or interrupted request marked running.
+          if (tracked) await conversations.recordTools(worker.account.storageKey, chat,
+            { turn, status: 'failed', calls: [] }, AbortSignal.timeout(config.shutdownGraceMs))
+          throw error
+        }
         return
       }
       if (req.headers.host !== publicURL.host || req.headers.origin && req.headers.origin !== publicURL.origin) {
         json(res, 403, { error: 'Invalid origin' }); return
       }
       for (const [key, login] of logins) {
-        if (login.expires <= Date.now()) { login.account.close(); logins.delete(key) }
+        if (login.expires <= Date.now()) { closeLogin(login); logins.delete(key) }
       }
       const basic = basicCredentials(req.headers.authorization)
       if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers.origin !== publicURL.origin && !basic) {
@@ -134,31 +235,12 @@ export function apply(ctx: Context, config: GatewayConfig): void {
           if (logins.size >= config.maxLogins) throw new BrainServiceError(503)
         } catch (error) { account.close(); throw error }
         const token = randomBytes(32).toString('hex')
-        logins.set(hash(token), { account, worker, expires: Date.now() + config.sessionMs })
+        logins.set(hash(token), { account, worker, expires: Date.now() + config.sessionMs, cancellation: new AbortController() })
         res.setHeader('set-cookie', `${cookieName}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${Math.floor(config.sessionMs / 1000)}`)
         json(res, 200, { signedIn: true })
         return
       }
-      const cookies = (req.headers.cookie ?? '').split(';').map(value => value.trim()).filter(value => value.startsWith(cookieName + '='))
-      const token = cookies.length === 1 ? cookies[0]?.slice(cookieName.length + 1) : undefined
-      const loginKey = basic ? 'basic-' + hash(req.headers.authorization ?? '') : token ? hash(token) : undefined
-      let login = loginKey ? logins.get(loginKey) : undefined
-      if (login && login.expires <= Date.now()) {
-        login.account.close()
-        if (loginKey) logins.delete(loginKey)
-        login = undefined
-      }
-      if (!login && basic && loginKey) {
-        if (logins.size >= config.maxLogins) throw new BrainServiceError(503)
-        const account = await accounts.login(basic.username, basic.password, signal)
-        let worker: UserWorker
-        try {
-          worker = await workers.acquire(account)
-          if (logins.size >= config.maxLogins) throw new BrainServiceError(503)
-        } catch (error) { account.close(); throw error }
-        login = { account, worker, expires: Date.now() + config.sessionMs }
-        logins.set(loginKey, login)
-      }
+      const { login, key: loginKey } = await authenticate(req, signal)
       if (!login) {
         if (req.method === 'GET' && url.pathname === '/') {
           await relay(await serveStatic(new Request(publicURL), dirname(config.loginIndex), config.loginIndex,
@@ -168,7 +250,7 @@ export function apply(ctx: Context, config: GatewayConfig): void {
         json(res, 401, { error: 'Sign in required' }); return
       }
       if (url.pathname === '/_brain/logout' && req.method === 'POST') {
-        login.account.close()
+        closeLogin(login)
         if (loginKey) logins.delete(loginKey)
         res.setHeader('set-cookie', `${cookieName}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`)
         json(res, 200, { signedIn: false })
@@ -176,6 +258,35 @@ export function apply(ctx: Context, config: GatewayConfig): void {
       }
       await login.account.authorize('web-request', undefined, signal)
       login.worker.account = login.account
+      if (url.pathname.startsWith('/_brain/tools/')) {
+        if (req.method !== 'GET' || url.search) { json(res, 405, { error: 'Method not allowed' }); return }
+        const chat = decodeURIComponent(url.pathname.slice('/_brain/tools/'.length))
+        json(res, 200, await conversations.tools(login.account.storageKey, chat))
+        return
+      }
+      if (url.pathname.startsWith('/_brain/conversations/') || url.pathname.startsWith('/_brain/privacy/')) {
+        const privacy = url.pathname.startsWith('/_brain/privacy/')
+        const chat = decodeURIComponent(url.pathname.slice(privacy ? '/_brain/privacy/'.length : '/_brain/conversations/'.length))
+        if (url.search || req.method !== 'GET' && (privacy || req.method !== 'POST')) {
+          json(res, 405, { error: 'Method not allowed' }); return
+        }
+        if (privacy) {
+          const scope = await login.account.authorize(chat, undefined, signal)
+          const key = (await ctx.credentials.resolve(credential))?.value
+          if (!key) throw new Error('Router credential unavailable')
+          await relay(await fetch(new URL('v1/privacy/sessions/' + scope.session, routerURL), {
+            headers: { authorization: `Bearer ${key}` }, redirect: 'error', signal,
+          }), res, signal)
+          return
+        }
+        if (req.method === 'POST') {
+          const preferences = conversationPreferences(await body(req, config.maxBodyBytes))
+          await login.account.authorize(chat, preferences.project ?? undefined, signal)
+          await conversations.set(login.account.storageKey, chat, preferences, signal)
+        }
+        json(res, 200, await conversations.get(login.account.storageKey, chat))
+        return
+      }
       if (url.pathname.startsWith('/_brain/application/')) {
         if (req.method !== 'GET' && req.method !== 'POST' || url.search) {
           json(res, 405, { error: 'Method not allowed' }); return

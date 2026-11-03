@@ -80,3 +80,10 @@ it('rejects foreign hosts and cross-origin sign-in before contacting Brain', asy
     headers: { host: 'brain-harness.example', origin: 'https://foreign.example' }, body: '{}' })
   expect(result.status).toBe(403)
 })
+
+it('rejects unauthenticated and cross-origin WebSocket upgrades', async () => {
+  const { url } = await composition()
+  const headers = { host: 'brain-harness.example', connection: 'Upgrade', upgrade: 'websocket', origin: 'https://brain-harness.example' }
+  expect((await get(url + '/api/remote.mux', { headers })).status).toBe(401)
+  expect((await get(url + '/api/remote.mux', { headers: { ...headers, origin: 'https://foreign.example' } })).status).toBe(403)
+})

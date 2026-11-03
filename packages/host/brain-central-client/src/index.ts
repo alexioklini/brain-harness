@@ -5,6 +5,7 @@ import { centralObject } from './values.ts'
 import type { CentralObject } from './values.ts'
 export { centralObject, BrainServiceError } from './values.ts'
 export type { CentralObject } from './values.ts'
+export { readBoundedJSON } from './transport.ts'
 export { BrainAccountClient } from './account.ts'
 export type { BrainAccount, BrainAccountSession } from './account.ts'
 

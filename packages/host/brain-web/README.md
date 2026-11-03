@@ -28,7 +28,7 @@ Workers use the reviewed Brain patch and their own generated gateway patch. `wor
 
 Controller-owned API clients can send HTTP Basic credentials on authenticated routes. The gateway exchanges them with Brain and retains only a private Brain session and a hash of the Authorization header until expiry; passwords are not stored. Browser requests still require matching origins. `maxLogins` bounds retained logins.
 
-The browser signs in at `POST /_brain/login` and signs out at `POST /_brain/logout`. Application calls under `/_brain/application/` use the account's private Brain cookie. Worker Router requests accept only model discovery, central-tool policy and Responses, with identity and session metadata derived by the gateway. HTTP request limits and cancellation apply to streaming. Restarting the gateway expires browser logins but retains account storage.
+The browser signs in at `POST /_brain/login` and signs out at `POST /_brain/logout`. Conversation choices under `/_brain/conversations/` persist in a parent-only sibling directory, separately by account and chat. Project access is checked before saving and again before inference. Privacy reads under `/_brain/privacy/` derive the session identifier from the signed-in account. Application calls under `/_brain/application/` use the account's private Brain cookie. Worker Router requests accept only model discovery, central-tool policy, authorized conversation instructions and Responses, with identity and session metadata derived by the gateway. HTTP request limits and cancellation apply to streaming. WebSocket upgrades use the same account validation and only the assigned worker cookie; logout, session expiry, shutdown and request deadlines close the stream. Responses events use standard SSE dispatch, so an event header without data is ignored. The latest inference request’s central-tool execution evidence is retained separately for the account and conversation; auxiliary title requests do not replace it. The worker’s default workspace lives inside its private home. Restarting the gateway expires browser logins but retains account storage.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -37,21 +37,21 @@ The browser signs in at `POST /_brain/login` and signs out at `POST /_brain/logo
 
 #### What the model sees
 
-The worker's existing `/v1/responses` conversation reaches the Router with central tool execution. The gateway supplies no tool names, schemas or additional model instructions.
+The worker's existing `/v1/responses` conversation reaches the Router with central tool execution. The gateway supplies no tool names or schemas. It returns authorized project instructions and the selected deep-search guidance to the worker, which records them through normal system-prompt assembly. MoA is dispatched by Router metadata.
 
 #### Token effect
 
-Authentication and account metadata do not add model tokens.
+Authentication metadata adds no model tokens. Project and research instructions consume their actual prompt tokens.
 
 #### KV Cache effect
 
-Account authorization does not rewrite the conversation prefix.
+Changing project instructions or research mode changes the recorded system prompt and can affect prefix reuse.
 
 ## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- This is an unfinished integration. Full worker startup, authenticated browser composition, project selection, privacy controls, MoA, research and central scheduled-task UI require acceptance before release. The gateway currently retains workers until process exit or shutdown; `maxUsers` bounds capacity. Live login and cross-account acceptance require dedicated Brain test accounts. It is not ready for public deployment.
+- This is an unfinished integration. The gateway and isolated worker startup have local smoke coverage. Project selection, privacy controls, MoA and research still require live acceptance; project management remains unfinished. The gateway currently retains workers until process exit or shutdown; `maxUsers` bounds capacity. The initial gateway is deployed for acceptance with dedicated Brain test accounts; it is not a completed feature release.
 
 <a id="dev-note"></a>
 ### Dev Note

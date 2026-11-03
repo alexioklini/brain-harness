@@ -1,4 +1,6 @@
 /** LLMRouter adapter using the shared Responses transport and central tool loop. @module */
+import type {} from '@deepseek-ai/dsh-agent'
+import type {} from '@deepseek-ai/dsh-system-prompt'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
@@ -15,6 +17,7 @@ export const Config = z.object({
   credential: z.string().role('credential-ref').required(),
   timeoutMs: z.number().step(1).min(1).required(),
   maxResponseBytes: z.number().step(1).min(1).required(),
+  gatewayContext: z.boolean().default(false),
 })
 /** Deployment connection and request bounds. */
 export interface Config {
@@ -26,6 +29,8 @@ export interface Config {
   timeoutMs: number
   /** Maximum bytes in a JSON service reply. */
   maxResponseBytes: number
+  /** Read account-owned project and research instructions from the Brain gateway. */
+  gatewayContext?: boolean
 }
 
 /** Convert only advertised model capabilities; no provider catalog fallback.
@@ -80,10 +85,11 @@ export class BrainAdapter extends LlmAdapter {
       baseURL: this.config.baseURL, models, timeoutMs: this.config.timeoutMs } }, {
       resolveApiKey: this.credential,
       resolveAttachments: () => this.ctx.get('attachments'),
-      requestMetadata: (request) => {
+      requestMetadata: (request: Readonly<GenerateOptions<string>>) => {
         if (!request.sessionId) throw new LlmError('Brain session identity is required', 'INVALID_CONFIG')
         if (request.tools?.length) throw new LlmError('Brain web sessions use central tools only', 'INVALID_CONFIG')
-        return { llmrouter_pii_session: String(request.sessionId),
+        return { ...request.purpose === undefined ? {} : { brain_request_purpose: request.purpose },
+          llmrouter_pii_session: String(request.sessionId),
           llmrouter_tools_session: String(request.sessionId),
           llmrouter_pii_source: 'brain-harness', llmrouter_context_policy: 'brain-v1' }
       },
@@ -109,7 +115,7 @@ export class BrainAdapter extends LlmAdapter {
 }
 
 export const name = 'llm-brain'
-export const inject = ['llm', 'credentials']
+export const inject = ['llm', 'credentials', 'systemPrompt']
 
 /** Register the Router route under this plugin's lifecycle. */
 export function apply(ctx: Context, config: Config): void {
@@ -121,5 +127,14 @@ export function apply(ctx: Context, config: Config): void {
   }
   const client = new BrainCentralClient({ baseURL: config.baseURL, timeoutMs: config.timeoutMs,
     maxResponseBytes: config.maxResponseBytes, credential })
+  if (config.gatewayContext) ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
+    const assembly = await next()
+    if (!context.agent) return assembly
+    const data = await client.request('/brain/context/' + encodeURIComponent(String(context.agent.id)), undefined, context.signal)
+    if (typeof data.instructions !== 'string') throw new Error('Brain conversation context unavailable')
+    if (!data.instructions) return assembly
+    return { ...assembly, sections: [...assembly.sections,
+      { name: 'brain:conversation', text: data.instructions, interpolate: false }] }
+  })
   ctx.effect(() => ctx.llm.registerAdapter(['brain'], new BrainAdapter(ctx, config, client, credential)))
 }

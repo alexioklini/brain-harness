@@ -1,0 +1,26 @@
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.taskForm {
+  display: grid;
+  gap: 12px;
+}
+
+.taskForm > label:not(:has(input[type="checkbox"])) {
+  display: grid;
+  gap: 4px;
+}

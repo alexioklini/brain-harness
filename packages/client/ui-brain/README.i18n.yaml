@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-brain/README.md
+/:
+  en: 2e8690bae964db60
+  zh: bf2ffa1361af7b85
+/brain-controls:
+  en: 93e71d30987f83b2
+  zh: 0ad3b0e8638518f0
+/brain-controls/summary:
+  en: 1a126c44f8bd7f7f
+  zh: b49319fbfd02024c
+/brain-controls/table-of-contents:
+  en: 2bff1b10b4d98702
+  zh: f636953131cedc6b
+/brain-controls/behavior:
+  en: 375e1661f904e3fe
+  zh: fbc1749d4f7e3e24
+/brain-controls/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/brain-controls/model-experience/conversation-choices:
+  en: a17fc8845e1e113e
+  zh: 155429f427ea2839
+/brain-controls/model-experience/conversation-choices/what-the-model-sees:
+  en: 470b6809155342e6
+  zh: 5ad8aaa93075f473
+/brain-controls/model-experience/conversation-choices/token-effect:
+  en: 86caa2fd03d4ed66
+  zh: c2676986052887b7
+/brain-controls/model-experience/conversation-choices/kv-cache-effect:
+  en: f4f8c90d6b514029
+  zh: 7765a01f81f84d39
+/brain-controls/known-limitations-and-deferred-work:
+  en: b6ff99983f5ff098
+  zh: 48a15df2183f8f7e
+/brain-controls/known-limitations-and-deferred-work/dev-note:
+  en: 7818d427cbc9f916
+  zh: 69557fe64323f102

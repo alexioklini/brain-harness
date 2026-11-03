@@ -1,4 +1,8 @@
 # Brain web deployment: central execution only. Use an isolated DSH_HOME.
+- id: hmr
+  disabled: true
+- id: client-hmr
+  disabled: true
 - id: subagent-model-selection-settings
   disabled: true
 - id: mcp-manager
@@ -12,6 +16,8 @@
 - id: workspace-files
   disabled: true
 - id: directory-picker
+  disabled: true
+- id: deliverable-file-references
   disabled: true
 - id: file-reference-local
   disabled: true
@@ -111,6 +117,8 @@
   disabled: true
 - id: ui-sidebar-files
   disabled: true
+- id: ui-settings-models
+  disabled: true
 - id: ui-settings-shell
   disabled: true
 - id: ui-settings-subagent
@@ -131,8 +139,6 @@
   disabled: true
 - id: open-in-app
   disabled: true
-- id: ui-file-drag
-  disabled: true
 
 - id: agent-default-model
   config:
@@ -146,6 +152,8 @@
     personaPrefix: You are Brain. Follow the user's instructions and use the available central services.
     includeRuntimeContext: false
 - insert:
+    - id: ui-brain
+      name: '@deepseek-ai/dsh-client-ui-brain'
     - id: llm-brain
       name: '@deepseek-ai/dsh-llm-brain'
       config:

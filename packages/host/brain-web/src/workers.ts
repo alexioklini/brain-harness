@@ -80,8 +80,9 @@ export class UserWorkers {
     const patch = join(home, 'gateway.patch.yml')
     // This credential reaches only the local gateway; it is not the shared Router key.
     await writeFile(patch, JSON.stringify([
-      { id: 'llm-brain', config: { baseURL: this.gatewayOrigin() + '/_brain/router/v1', credential: 'BRAIN_ROUTER_KEY',
+      { id: 'llm-brain', config: { baseURL: this.gatewayOrigin() + '/_brain/router/v1', credential: 'BRAIN_ROUTER_KEY', gatewayContext: true,
         timeoutMs: this.config.requestTimeoutMs, maxResponseBytes: this.config.maxBodyBytes } },
+      { id: 'workspace-controller', config: { documentsDirectory: join(home, 'Documents') } },
       { id: 'agent-default-model', config: { provider: 'brain', model: this.config.defaultModel } },
     ]), { mode: 0o600 })
     const confined = await this.ctx.sandbox.confine([this.config.nodeBin, this.config.cliBin, 'web', '--patch', this.config.workerPatch,
