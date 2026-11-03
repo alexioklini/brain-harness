@@ -40,6 +40,7 @@ export function routerModel(row: CentralObject): PiAiModelProfile {
     for (const value of reasoning.levels) {
       const level: unknown = value
       switch (level) {
+        case 'none': efforts.off = 'none'; break
         case 'off': case 'minimal': case 'low': case 'medium': case 'high': case 'xhigh': case 'max':
           efforts[level] = level
           break
@@ -71,7 +72,9 @@ export class BrainAdapter extends LlmAdapter {
       throw new LlmError('This Brain account requires central automatic tool execution', 'INVALID_CONFIG')
     }
     const models = (await this.client.models(signal))
-      .filter(row => row.inference_endpoint !== '/v1/decisions').map(routerModel)
+      .filter(row => row.composer_visible !== false && row.inference_endpoint !== '/v1/decisions'
+        && Array.isArray(row.capabilities) && row.capabilities.some(capability =>
+        ['text', 'guided', 'tools', 'responses'].includes(String(capability)))).map(routerModel)
     if (!models.length) throw new LlmError('No models are available for this account', 'MODEL_NOT_FOUND')
     return createGatewayAdapter(this.ctx, { brain: { displayName: 'Brain', api: 'openai-responses',
       baseURL: this.config.baseURL, models, timeoutMs: this.config.timeoutMs } }, {

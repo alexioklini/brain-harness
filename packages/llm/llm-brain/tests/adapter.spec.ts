@@ -80,3 +80,13 @@ it('retains advertised reasoning and rejects an unsupported level instead of sil
   expect(routerModel({ id: 'plain' }).reasoningEfforts).toBe(false)
   expect(() => routerModel({ id: 'future', reasoning: { levels: ['unknown-level'] } })).toThrow('not supported')
 })
+
+it('maps the Router none effort and excludes hidden and non-chat models', async () => {
+  expect(routerModel({ id: 'plain', reasoning: { levels: ['none', 'high'] } }).reasoningEfforts)
+    .toEqual({ off: 'none', high: 'high' })
+  const { adapter } = await setup([{ body: policy }, { body: JSON.stringify({ data: [model,
+    { ...model, id: 'hidden', composer_visible: false },
+    { id: 'embed', capabilities: ['embedding'] }, { id: 'speech', capabilities: ['transcription'] },
+  ] }) }])
+  expect((await adapter.listModels('brain')).map(row => row.id)).toEqual([model.id])
+})

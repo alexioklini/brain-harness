@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `brain` provider reads the authenticated Router catalog for model selection and again when preparing a call. Revoked models and failed catalog reads stop the request. The shared pi-ai adapter handles Responses streaming, cancellation and message conversion. Each prepared call retains its resolved model configuration.
+The `brain` provider reads the authenticated Router catalog for model selection and again when preparing a call. Revoked models and failed catalog reads stop the request. The shared pi-ai adapter handles Responses streaming, cancellation and message conversion. Each prepared call retains its resolved model configuration. The picker includes visible text-generation models; Router reasoning `none` maps to Harness `off` while retaining its wire value.
 
 Configure `baseURL`, a credential reference, `timeoutMs` and `maxResponseBytes`. The account must use Router `automatic` tool execution. Harness supplies no local tool declarations; LLMRouter owns central selection, execution and continuation. Local tool declarations fail before inference. Requests carry the Harness session identifier for central tools and PII and use the Brain context policy.
 

@@ -9,7 +9,7 @@ kind: package-reference
 
 ## 概述
 
-`brain` 提供方在选择模型及准备调用时读取经过身份验证的 Router 目录。模型权限被撤销或目录读取失败时，请求会停止。共享 pi-ai 适配器负责 Responses 流式传输、取消和消息转换。每次准备好的调用保留已解析的模型配置。
+`brain` 提供方在选择模型及准备调用时读取经过身份验证的 Router 目录。模型权限被撤销或目录读取失败时，请求会停止。共享 pi-ai 适配器负责 Responses 流式传输、取消和消息转换。每次准备好的调用保留已解析的模型配置。选择器仅显示可见的文本生成模型；Router 的推理级别 `none` 映射到 Harness 的 `off`，同时保留传输值。
 
 配置 `baseURL`、凭据引用、`timeoutMs` 和 `maxResponseBytes`。账号必须使用 Router 的 `automatic` 工具执行模式。Harness 不提供本地工具声明；中央工具选择、执行及后续调用由 LLMRouter 负责。存在本地工具声明时，请求在推理前失败。请求携带 Harness 会话标识，供中央工具和 PII 使用，并采用 Brain 上下文策略。
 
