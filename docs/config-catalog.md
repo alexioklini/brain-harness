@@ -1909,6 +1909,29 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-jobs-local -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-brain -->
+<a id="deepseek-aidsh-llm-brain"></a>
+
+## `@deepseek-ai/dsh-llm-brain`
+
+- `inject`: `llm` · `credentials`
+- `source`: [`packages/llm/llm-brain/src/index.ts:20`](../packages/llm/llm-brain/src/index.ts)
+
+```ts config-catalog
+/** Deployment connection and request bounds. */
+export interface Config {
+  /** Router API base URL including /v1. */
+  baseURL: string
+  /** Host credential reference, never a literal secret. */
+  credential: string
+  /** Maximum request duration in milliseconds. */
+  timeoutMs: number
+  /** Maximum bytes in a JSON service reply. */
+  maxResponseBytes: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-brain -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-account -->
 <a id="deepseek-aidsh-llm-deepseek-account"></a>
 
@@ -5046,6 +5069,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-app-boot` | — | [`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts) |
 | `@deepseek-ai/dsh-atomic-write` | — | [`packages/util/atomic-write/src/index.ts`](../packages/util/atomic-write/src/index.ts) |
 | `@deepseek-ai/dsh-base` | — | [`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts) |
+| `@deepseek-ai/dsh-brain-central-client` | — | [`packages/host/brain-central-client/src/index.ts`](../packages/host/brain-central-client/src/index.ts) |
 | `@deepseek-ai/dsh-brand` | — | [`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts) |
 | `@deepseek-ai/dsh-chunked-list` | — | [`packages/util/chunked-list/src/index.ts`](../packages/util/chunked-list/src/index.ts) |
 | `@deepseek-ai/dsh-client-store` | — | [`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts) |

@@ -65,10 +65,11 @@ import type { AdapterRegistrationHandle, DirectoryRegistrationHandle, LlmConfigu
 import type {} from '@deepseek-ai/dsh-fs'
 import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
 import { PiAiAdapter } from './adapter.ts'
+import type { PiAiAdapterOptions } from './adapter.ts'
 import { authContextFrom, credentialStoreFrom } from './auth.ts'
 import { catalogProvider, catalogProviderIds } from './catalog.ts'
 import { assertServiceable, Config, resolveProfiles } from './config.ts'
-import type { ResolvedPiAiProviderProfile } from './config.ts'
+import type { PiAiProviderProfile, ResolvedPiAiProviderProfile } from './config.ts'
 import { discoverModels } from './discovery.ts'
 import type { StoredModelDiscoveryProfile } from './discovery.ts'
 import { registerPiAiFlows } from './login.ts'
@@ -92,6 +93,22 @@ export type {
 } from './config.ts'
 export { recordKeyFor } from './auth.ts'
 export { supportedProtocols } from './provider.ts'
+
+/** Create a gateway adapter with validated profiles and the host's credential service.
+ * @param ctx - Owning host context.
+ * @param providers - Gateway-owned provider profiles.
+ * @param options - Transport callbacks and limits.
+ * @returns Configured shared Responses adapter.
+ */
+export function createGatewayAdapter(
+  ctx: Context,
+  providers: Readonly<Record<string, PiAiProviderProfile>>,
+  options: Omit<PiAiAdapterOptions, 'profiles' | 'auth'>,
+): PiAiAdapter {
+  const profiles = resolveProfiles(providers)
+  return new PiAiAdapter({ ...options, profiles: () => profiles,
+    auth: { credentials: credentialStoreFrom(ctx), authContext: authContextFrom(ctx) } })
+}
 
 export const name = 'llm-pi-ai'
 export const inject = ['llm']

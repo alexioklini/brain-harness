@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-brain/README.md
+/:
+  en: 8d4c8d58fb3187a9
+  zh: 77d58d730095e9d1
+/brain-model-adapter:
+  en: 066d5ebfe5acf1b0
+  zh: df94e487c093b0be
+/brain-model-adapter/summary:
+  en: 557bc47b2f55d62e
+  zh: 1ebfdd53b485d56d
+/brain-model-adapter/table-of-contents:
+  en: a1bce86fbb5a28ba
+  zh: 9f248730189f215f
+/brain-model-adapter/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/brain-model-adapter/model-experience/central-service-request:
+  en: ab3a863deb9e05ad
+  zh: d50573298abef18d
+/brain-model-adapter/model-experience/central-service-request/what-the-model-sees:
+  en: ab7c6e790eba07a5
+  zh: 6973a14b18e9c610
+/brain-model-adapter/model-experience/central-service-request/token-effect:
+  en: bf17e6c2d4884d65
+  zh: 64579bbe0e809677
+/brain-model-adapter/model-experience/central-service-request/kv-cache-effect:
+  en: 4b06aac3ee874085
+  zh: 51693eec0a07ae85
+/brain-model-adapter/known-limitations-and-deferred-work:
+  en: f49c54b362784d72
+  zh: 99040b1f20445597
+/brain-model-adapter/known-limitations-and-deferred-work/dev-note:
+  en: d1b9eaa79622849a
+  zh: c81decce5d4e6043

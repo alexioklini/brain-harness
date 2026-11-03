@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/host/brain-central-client/README.md
+/:
+  en: cf7ddc981438c529
+  zh: 948052968c240dd5
+/brain-central-client:
+  en: bca7c56e351ddfee
+  zh: 343eef209cf17abe
+/brain-central-client/summary:
+  en: 8afa399fc49fd71e
+  zh: 42bde449a36c4afd
+/brain-central-client/table-of-contents:
+  en: a1bce86fbb5a28ba
+  zh: 9f248730189f215f
+/brain-central-client/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/brain-central-client/model-experience/central-service-request:
+  en: ab3a863deb9e05ad
+  zh: d50573298abef18d
+/brain-central-client/model-experience/central-service-request/what-the-model-sees:
+  en: f85ebf30484df652
+  zh: 03d7f509d15fb585
+/brain-central-client/model-experience/central-service-request/token-effect:
+  en: bf17e6c2d4884d65
+  zh: 64579bbe0e809677
+/brain-central-client/model-experience/central-service-request/kv-cache-effect:
+  en: 4b06aac3ee874085
+  zh: 51693eec0a07ae85
+/brain-central-client/known-limitations-and-deferred-work:
+  en: 2d60c072084e6952
+  zh: 3603c953cae470a6
+/brain-central-client/known-limitations-and-deferred-work/dev-note:
+  en: d1b9eaa79622849a
+  zh: c81decce5d4e6043

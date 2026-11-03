@@ -117,6 +117,8 @@ export interface PiAiAdapterOptions {
    * @returns headers to pass to pi-ai after applying Harness attribution.
    */
   prepareHeaders?: (request: PiAiRequestHeaderContext, headers: Headers) => Headers
+  /** Supply transport-only Responses metadata; never changes logged model content. */
+  requestMetadata?: (request: Readonly<GenerateOptions>) => Readonly<Record<string, string>>
   /** Resolve the optional durable attachment service at request time. */
   resolveAttachments?: () => AttachmentStore | undefined
   /** Bridge one attachment reference into the current model-tool execution world. */
@@ -464,6 +466,15 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
         signal: watchdog.signal,
         headers: requestHeaders(profile.headers, options, model.baseUrl, this.config.prepareHeaders),
+        ...this.config.requestMetadata === undefined ? {} : {
+          onPayload: (payload: unknown) => {
+            if (profile.api !== 'openai-responses') throw new LlmError('Request metadata requires Responses', 'INVALID_CONFIG')
+            if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+              throw new LlmError('Invalid Responses payload', 'INVALID_CONFIG')
+            }
+            return { ...payload, metadata: this.config.requestMetadata?.(options) }
+          },
+        },
       })
       const iterator = toStreamChunks(events, model.contextWindow, options.signal, model.id)[Symbol.asyncIterator]()
       let exhausted = false
