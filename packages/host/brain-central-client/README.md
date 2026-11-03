@@ -25,6 +25,8 @@ Configure `baseURL` with the Router API prefix, for example `https://router.exam
 
 `BrainAccountClient` uses the existing Brain `/api/anmeldung` and `/api/ich` APIs. Its server-owned login retains the session cookie privately. Each authorization reloads the user and teams, rejects an identity change, and checks the selected project through Brain. It derives different storage and chat identifiers for different accounts, even when their application API key is shared. Closing a login immediately prevents further local authorization; it does not revoke the upstream Brain session. The caller must keep each user's runtime separate and must not serialize the login capability to the browser.
 
+Project document uploads use the existing authenticated Brain multipart endpoint. `projectEvidence` requires a verified `ragScope`, opens the central knowledge collection and searches with the first 4000 characters of the current question, the search API’s limit. Account and project headers accompany both calls; there is no local index or stale-evidence fallback.
+
 <a id="model-experience"></a>
 ## Model Experience
 

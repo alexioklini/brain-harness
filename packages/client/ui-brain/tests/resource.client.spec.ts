@@ -41,3 +41,12 @@ it('retains central task settings and rejects malformed schedule records', () =>
   expect(() => decodeResource('tasks', { data: [{ ...task, schedule: { ...task.schedule, interval: 0 } }] })).toThrow()
   expect(decodeResource('models', { modelle: [{ id: 'router:model', anzeige: 'Model' }] })).toEqual({ kind: 'models', value: [{ id: 'router:model', name: 'Model' }] })
 })
+
+it('shows project write access and completed task output while rejecting malformed responses', () => {
+  expect(decodeResource('project', { id: 'p', name: 'Project', anweisungen: '', darfAendern: false,
+    dateien: [{ name: 'document.txt', zustand: 'gelesen' }] })).toMatchObject({ value: { writable: false, files: [{ name: 'document.txt' }] } })
+  expect(() => decodeResource('project', { id: 'p', name: 'Project', anweisungen: '', dateien: [] })).toThrow()
+  expect(decodeResource('runs', { data: [{ id: 'run', task: 'task', status: 'completed', output: '437', error: '' }] }))
+    .toMatchObject({ value: [{ output: '437' }] })
+  expect(() => decodeResource('runs', { data: [{ id: 'run', task: 'task', status: 'completed', output: 437, error: '' }] })).toThrow()
+})

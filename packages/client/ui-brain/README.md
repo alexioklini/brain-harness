@@ -25,6 +25,8 @@ The task dialog lists account-owned tasks and supports creation, calendar edits,
 
 The tool dialog shows service-reported execution status, arguments and output for the most recent inference request. This is execution evidence, not the enabled-tool catalog. Failed reads and saves stay visible with a retry control. Signing out expires the local gateway login. The package is mounted only by the Brain worker patch and does not modify the upstream default interface.
 
+The project dialog supports creation, instruction edits and document uploads through Brain. It shows current write access and indexing status. The task dialog displays recorded run output and errors. MoA status comes from the Router’s account-scoped orchestration trace.
+
 <a id="model-experience"></a>
 ## Model Experience
 
@@ -46,7 +48,7 @@ Changing project instructions or research mode may change the prompt prefix.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- Project creation and corpus management are not yet exposed by this package. Live research, MoA, privacy and multi-account acceptance remain pending; local component checks are not model acceptance.
+- Live project-document retrieval, MoA diagnostics and multi-account acceptance remain pending; local component checks are not model acceptance.
 
 <a id="dev-note"></a>
 ### Dev Note

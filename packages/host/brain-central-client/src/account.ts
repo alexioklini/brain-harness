@@ -55,6 +55,14 @@ export interface BrainAccountSession {
    * @returns Decoded application data, including list responses.
    */
   request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<unknown>
+  /** Upload one project document using the account's existing Brain session.
+   * @param project - Project identifier; Brain enforces write access.
+   * @param name - Document basename.
+   * @param bytes - Document contents.
+   * @param signal - Caller cancellation.
+   * @returns Brain's upload result.
+   */
+  uploadProjectFile(project: string, name: string, bytes: Uint8Array<ArrayBuffer>, signal?: AbortSignal): Promise<unknown>
 }
 
 /** Authenticate existing Brain users without creating another account database. */
@@ -94,6 +102,17 @@ export class BrainAccountClient {
         }
         await verify(abort)
         const result = await authenticated.request(path, body, abort)
+        if (!cookie) throw new Error('Brain sign-in required')
+        return result.data
+      },
+      uploadProjectFile: async (project, name, bytes, abort) => {
+        if (!/^[A-Za-z0-9_-]{1,128}$/.test(project) || !name || /[/\\\0]/.test(name) || name === '.' || name === '..') {
+          throw new Error('Invalid project document')
+        }
+        await verify(abort)
+        const form = new FormData()
+        form.append('dateien', new Blob([bytes]), name)
+        const result = await authenticated.request('/api/projekte/' + project + '/dateien', form, abort)
         if (!cookie) throw new Error('Brain sign-in required')
         return result.data
       },

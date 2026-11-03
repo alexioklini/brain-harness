@@ -60,3 +60,17 @@ describe('central web execution', () => {
       credential: async () => 'fixture', timeoutMs: 1000, maxResponseBytes: 1000 })).toThrow('HTTPS')
   })
 })
+
+it('retrieves project evidence with verified account scope and rejects missing scope', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response('{"id":"vs_fixture"}'))
+    .mockResolvedValueOnce(new Response('{"data":[{"file_id":"file_fixture","filename":"test.txt","content":[{"text":"RAG marker"}]}]}'))
+  vi.stubGlobal('fetch', fetcher)
+  const scoped = new BrainCentralClient({ baseURL: 'https://router.example/v1', credential: async () => 'fixture',
+    timeoutMs: 1000, maxResponseBytes: 10000, ragScope: { principal: 'fm-user-alice', context: { project: 'project-a', teams: [] } } })
+  expect(await scoped.projectEvidence('project marker')).toMatchObject({ data: [{ filename: 'test.txt' }] })
+  expect(fetcher.mock.calls[1]?.[0]).toEqual(new URL('https://router.example/v1/vector_stores/vs_fixture/search'))
+  expect(fetcher.mock.calls[1]?.[1]?.headers).toMatchObject({ 'x-rag-principal': 'fm-user-alice',
+    'x-rag-context': '{"project":"project-a","teams":[]}' })
+  await expect(client().projectEvidence('project marker')).rejects.toThrow('Authorized project scope required')
+  expect(fetcher).toHaveBeenCalledTimes(2)
+})

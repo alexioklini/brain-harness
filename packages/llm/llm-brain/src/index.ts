@@ -127,14 +127,26 @@ export function apply(ctx: Context, config: Config): void {
   }
   const client = new BrainCentralClient({ baseURL: config.baseURL, timeoutMs: config.timeoutMs,
     maxResponseBytes: config.maxResponseBytes, credential })
-  if (config.gatewayContext) ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
-    const assembly = await next()
-    if (!context.agent) return assembly
-    const data = await client.request('/brain/context/' + encodeURIComponent(String(context.agent.id)), undefined, context.signal)
-    if (typeof data.instructions !== 'string') throw new Error('Brain conversation context unavailable')
-    if (!data.instructions) return assembly
-    return { ...assembly, sections: [...assembly.sections,
-      { name: 'brain:conversation', text: data.instructions, interpolate: false }] }
-  })
+  if (config.gatewayContext) {
+    const queries = new WeakMap<object, string>()
+    ctx.on('agent/inbox/claimed', ({ agent, message }) => {
+      if (message.source.kind !== 'user') return
+      const query = message.content.flatMap(block => block.type === 'text' ? [block.text] : []).join('\n')
+      queries.set(agent, query)
+    })
+    ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
+      const assembly = await next()
+      if (!context.agent) return assembly
+      const data = await client.request('/brain/context/' + encodeURIComponent(String(context.agent.id)),
+        { query: queries.get(context.agent) ?? '' }, context.signal)
+      if (typeof data.instructions !== 'string' || typeof data.evidence !== 'string') throw new Error('Brain conversation context unavailable')
+      return { ...assembly,
+        sections: [...assembly.sections, ...data.instructions
+          ? [{ name: 'brain:conversation', text: data.instructions, interpolate: false }] : []],
+        contexts: [...assembly.contexts, ...data.evidence
+          ? [{ name: 'brain:project-evidence', text: data.evidence, interpolate: false }] : []],
+      }
+    })
+  }
   ctx.effect(() => ctx.llm.registerAdapter(['brain'], new BrainAdapter(ctx, config, client, credential)))
 }

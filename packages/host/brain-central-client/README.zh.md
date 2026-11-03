@@ -25,6 +25,8 @@ Host 侧客户端读取当前 LLMRouter 模型目录、准备中央工具选择�
 
 `BrainAccountClient` 使用已有的 Brain `/api/anmeldung` 和 `/api/ich` API。由服务器持有的登录能力私下保留会话 cookie。每次授权都重新读取用户和团队，拒绝身份变更，并通过 Brain 检查所选项目。即使多个账号共享应用 API 密钥，也会派生出不同的存储和聊天标识。关闭登录会立即阻止后续本地授权，但不撤销上游 Brain 会话。调用方必须隔离各用户的运行时，且不得将登录能力序列化后发送给浏览器。
 
+项目文档上传使用已有的 Brain 已认证 multipart 接口。`projectEvidence` 要求已验证的 `ragScope`，打开中央知识集合，并使用当前问题的前 4000 个字符搜索，这是搜索 API 的上限。两次请求均携带账户和项目请求头；不使用本地索引，也不回退到过期证据。
+
 <a id="model-experience"></a>
 ## 模型体验
 

@@ -15,6 +15,8 @@ export interface BrainConnection {
   credential: () => Promise<string>
   timeoutMs: number
   maxResponseBytes: number
+  /** Verified account scope for central RAG; never supplied directly by the browser. */
+  ragScope?: { principal: string; context: CentralObject }
 }
 
 /** Session identifiers used consistently by tools, privacy and inference. */
@@ -28,11 +30,13 @@ export interface BrainSession {
 export class BrainCentralClient {
   private readonly transport: JSONTransport
 
-  constructor(connection: BrainConnection) {
+  constructor(private readonly connection: BrainConnection) {
     this.transport = new JSONTransport({ ...connection, headers: async () => {
       const key = await connection.credential()
       if (!key) throw new Error('Brain sign-in required')
-      return { authorization: `Bearer ${key}` }
+      return { authorization: `Bearer ${key}`, ...connection.ragScope ? {
+        'x-rag-principal': connection.ragScope.principal, 'x-rag-context': JSON.stringify(connection.ragScope.context),
+      } : {} }
     } })
   }
 
@@ -44,6 +48,22 @@ export class BrainCentralClient {
    */
   async request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<CentralObject> {
     return centralObject((await this.transport.request(path, body, signal)).data)
+  }
+
+  /** Retrieve evidence from the account's authorized project knowledge collection.
+   * @param query - Current user question, bounded by the central search API's 4000-character limit.
+   * @param signal - Caller cancellation.
+   * @returns Service results, including source identifiers and excerpts.
+   */
+  async projectEvidence(query: string, signal?: AbortSignal): Promise<CentralObject> {
+    if (!this.connection.ragScope?.principal || typeof this.connection.ragScope.context.project !== 'string') {
+      throw new Error('Authorized project scope required')
+    }
+    const collection = await this.request('/rag/collections', { kind: 'knowledge' }, signal)
+    if (typeof collection.id !== 'string' || !/^vs_[A-Za-z0-9_-]+$/.test(collection.id)) throw new Error('Invalid knowledge collection')
+    const result = await this.request('/vector_stores/' + collection.id + '/search', { query: query.slice(0, 4000) }, signal)
+    if (!Array.isArray(result.data)) throw new Error('Invalid knowledge evidence')
+    return result
   }
 
   /** Retrieve the current authorized model catalog; an outage remains an error.

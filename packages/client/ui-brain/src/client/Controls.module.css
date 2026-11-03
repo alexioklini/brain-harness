@@ -24,3 +24,8 @@
   display: grid;
   gap: 4px;
 }
+
+.output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

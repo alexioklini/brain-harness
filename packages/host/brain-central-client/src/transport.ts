@@ -33,7 +33,7 @@ export class JSONTransport {
    * @param signal - Caller cancellation.
    * @returns Decoded JSON value and response headers.
    */
-  async request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<{ data: unknown; headers: Headers }> {
+  async request(path: string, body?: CentralObject | FormData, signal?: AbortSignal): Promise<{ data: unknown; headers: Headers }> {
     if (!path.startsWith('/') || path.startsWith('//') || /[?#\\]/.test(path)
       || path.split('/').some(part => part === '.' || part === '..' || part.includes('%'))) {
       throw new Error('Invalid central API path')
@@ -43,8 +43,8 @@ export class JSONTransport {
     const combined = signal ? AbortSignal.any([signal, deadline]) : deadline
     const response = await fetch(new URL(path.slice(1), this.base), {
       method: body === undefined ? 'GET' : 'POST',
-      headers: { ...headers, 'content-type': 'application/json' },
-      ...body === undefined ? {} : { body: JSON.stringify(body) },
+      headers: body instanceof FormData ? headers : { ...headers, 'content-type': 'application/json' },
+      ...body === undefined ? {} : { body: body instanceof FormData ? body : JSON.stringify(body) },
       redirect: 'error', signal: combined,
     })
     if (!response.ok) {

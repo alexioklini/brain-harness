@@ -1,5 +1,6 @@
 /** Conversation controls using the shared menu, button and modal primitives. @module */
 import { Choice } from './Choice.tsx'
+import { Projects } from './Projects.tsx'
 import { Tasks } from './Tasks.tsx'
 import type { CentralTask } from './task-data.ts'
 import { useState } from 'react'
@@ -17,6 +18,8 @@ export interface Actions {
   signOut: () => Promise<void>
   saveTask: (task: CentralTask) => Promise<CentralTask>
   runTask: (id: string) => Promise<void>
+  saveProject: (id: string | undefined, name: string, instructions: string) => Promise<string>
+  uploadProject: (id: string, files: FileList) => Promise<void>
 }
 type ControlsProps = PropsRuntime<'conversation.input.dock'> & PropsLocale<'brain'> & InjectFace<Actions>
 
@@ -81,11 +84,15 @@ function Privacy({ sessionId, useResource, t, onClose }: Pick<ControlsProps, 'se
  * @param props - Injected account mutation and localized labels.
  * @returns The shared sign-out control and its failure state.
  */
-export function SignOut({ signOut, saveTask, runTask, useResource, t }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'brain'> & InjectFace<Actions>) {
+export function SignOut({ signOut, saveTask, runTask, saveProject, uploadProject, useResource, t }:
+PropsRuntime<'sidebar.footer.action'> & PropsLocale<'brain'> & InjectFace<Actions>) {
   const [failed, setFailed] = useState(false)
   const [tasks, setTasks] = useState(false)
-  return <div><Button onClick={() =>{  setTasks(true) }}>{t('tasks')}</Button><Button onClick={() => { void signOut().catch(() =>{  setFailed(true) }) }}>{t('signOut')}</Button>
+  const [projects, setProjects] = useState(false)
+  return <div className={css.controls}><Button onClick={() => { setProjects(true) }}>{t('projects')}</Button><Button onClick={() =>{  setTasks(true) }}>{t('tasks')}</Button><Button onClick={() => { void signOut().catch(() =>{  setFailed(true) }) }}>{t('signOut')}</Button>
     {failed && <span role="alert">{t('failed')}</span>}
+    {projects && <Projects useResource={useResource} saveProject={saveProject} uploadProject={uploadProject} t={t}
+      onClose={() => { setProjects(false) }} />}
     {tasks && <Tasks useResource={useResource} saveTask={saveTask} runTask={runTask} t={t} onClose={() =>{  setTasks(false) }} />}
   </div>
 }
@@ -103,12 +110,13 @@ function Tools({ sessionId, useResource, t, onClose }: Pick<ControlsProps, 'sess
   const resource = useResource<'brain'>(`dsh-resource://brain/tools/${encodeURIComponent(sessionId)}?revision=${revision}`)
   const value = resource.value?.kind === 'tools' ? resource.value.value : undefined
   return <Modal open title={t('tools')} closeLabel={t('close')} onClose={onClose}>
+    {value?.moa && <p>{t('moa')} · {value.moa === 'complete' ? t('completed') : value.moa === 'partial' ? t('partial') : t('executionFailed')}</p>}
     {resource.status === 'failed' || value?.status === 'failed' ? <p role="alert">{t('failed')}</p>
       : value === undefined ? <p role="status">{t('loading')}</p>
         : value.status === 'running' ? <p role="status">{t('running')}</p>
           : value.calls.length === 0 ? <p>{t('noTools')}</p> : value.calls.map(call => <details key={call.id}>
             <summary>{call.name} · {t(call.status)}</summary>
-            <pre>{call.arguments}</pre><pre>{call.output}</pre>
+            <pre className={css.output}>{call.arguments}</pre><pre className={css.output}>{call.output}</pre>
           </details>)}
     <Button onClick={() =>{  setRevision(value => value + 1) }}>{t('refresh')}</Button>
   </Modal>

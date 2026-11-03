@@ -87,3 +87,18 @@ it('rejects application login replacement and prevents reads after identity chan
   await expect(login.request('/api/projekte')).rejects.toThrow('account changed')
   expect(fetcher).toHaveBeenCalledTimes(2)
 })
+
+it('uploads project documents with the account cookie and refuses path traversal', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(reply(alice, true))
+    .mockResolvedValueOnce(reply(alice)).mockResolvedValueOnce(reply({ dateien: [{ name: 'fixture.txt' }] }))
+  vi.stubGlobal('fetch', fetcher)
+  const login = await client().login('alice', 'fixture')
+  const bytes = new TextEncoder().encode('Fixture evidence')
+  expect(await login.uploadProjectFile('project-a', 'fixture.txt', bytes)).toEqual({ dateien: [{ name: 'fixture.txt' }] })
+  const options = fetcher.mock.calls[2]?.[1]
+  expect(options?.headers).toEqual({ cookie: `fmsitzung=${'a'.repeat(64)}` })
+  expect(options?.body).toBeInstanceOf(FormData)
+  await expect(login.uploadProjectFile('../foreign', 'fixture.txt', bytes)).rejects.toThrow('Invalid project document')
+  await expect(login.uploadProjectFile('project-a', '../foreign.txt', bytes)).rejects.toThrow('Invalid project document')
+  expect(fetcher).toHaveBeenCalledTimes(3)
+})

@@ -31,6 +31,7 @@ it.runIf(process.platform === 'darwin')('starts the confined web worker and reus
     }, () => 'http://127.0.0.1:1')
     const account: BrainAccountSession = {
       storageKey: 'user-' + 'a'.repeat(64), close() {},
+      async uploadProjectFile() { throw new Error('unused fixture upload') },
       async request() { throw new Error('No application requests expected') },
       async authorize() { return { account: { id: brandString<BrainAccount['id']>('fixture'), name: 'Fixture', teams: [] },
         principal: 'fm-user-fixture', session: 'fixture', context: { teams: [] } } },

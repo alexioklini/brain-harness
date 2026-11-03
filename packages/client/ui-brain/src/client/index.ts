@@ -49,6 +49,29 @@ export function apply(ctx: Context): void {
       })
       if (!response.ok) throw new Error('Run failed')
     },
+    async saveProject(id, name, instructions) {
+      const response = await fetch('/_brain/application/projekte' + (id ? '/' + encodeURIComponent(id) : ''), {
+        method: 'POST', credentials: 'same-origin', signal: stopping.signal,
+        headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, anweisungen: instructions }),
+      })
+      if (!response.ok) throw new Error('Save failed')
+      if (id) return id
+      const data: unknown = await response.json()
+      if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') throw new Error('Invalid project')
+      return data.id
+    },
+    async uploadProject(id, files) {
+      for (const file of Array.from(files)) {
+        const bytes = new Uint8Array(await file.arrayBuffer())
+        let binary = ''
+        for (const byte of bytes) binary += String.fromCharCode(byte)
+        const response = await fetch('/_brain/project-files/' + encodeURIComponent(id), {
+          method: 'POST', credentials: 'same-origin', signal: stopping.signal,
+          headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: file.name, base64: btoa(binary) }),
+        })
+        if (!response.ok) throw new Error('Upload failed')
+      }
+    },
     async signOut() {
       const response = await fetch('/_brain/logout', { method: 'POST', credentials: 'same-origin', signal: stopping.signal })
       if (!response.ok) throw new Error('Sign out failed')

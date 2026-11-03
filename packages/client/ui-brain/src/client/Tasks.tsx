@@ -28,17 +28,19 @@ export function Tasks({ useResource, saveTask, runTask, t, onClose }: Props) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<'saved' | 'queued' | 'saveFailed' | null>(null)
   const tasks = useResource<'brain'>(`dsh-resource://brain/tasks?revision=${revision}`)
+  const runs = useResource<'brain'>(`dsh-resource://brain/runs?revision=${revision}`)
   const models = useResource<'brain'>('dsh-resource://brain/models')
   const projects = useResource<'brain'>('dsh-resource://brain/projects')
   const rows = tasks.value?.kind === 'tasks' ? tasks.value.value : []
   const modelRows = models.value?.kind === 'models' ? models.value.value : []
   const projectRows = projects.value?.kind === 'projects' ? projects.value.value : []
+  const runRows = runs.value?.kind === 'runs' ? runs.value.value.filter(run => run.task === draft.id) : []
   const disabled = busy || draft.archived === true
   const update = (value: Partial<CentralTask>): void => { setDraft({ ...draft, ...value }); setStatus(null) }
   const submit = async (run: boolean): Promise<void> => {
     setBusy(true); setStatus(null)
     try {
-      if (run && draft.id) { await runTask(draft.id); setStatus('queued') }
+      if (run && draft.id) { await runTask(draft.id); setStatus('queued'); setRevision(value => value + 1) }
       else { setDraft(await saveTask(draft)); setStatus('saved'); setRevision(value => value + 1) }
     } catch (_error: unknown) { setStatus('saveFailed') }
     finally { setBusy(false) }
@@ -77,6 +79,12 @@ export function Tasks({ useResource, saveTask, runTask, t, onClose }: Props) {
         {draft.id && <Button disabled={disabled} onClick={() => { void submit(true) }}>{t('runNow')}</Button>}
         <Button disabled={busy} onClick={() =>{  setRevision(value => value + 1) }}>{t('refresh')}</Button>
       </div>
+      {draft.id && runs.status === 'failed' && <p role="alert">{t('failed')}</p>}
+      {runRows.map(run => <details key={run.id}>
+        <summary>{t(run.status === 'failed' ? 'executionFailed' : run.status)}</summary>
+        {run.output && <pre className={css.output}>{run.output}</pre>}
+        {run.error && <p role="alert">{run.error}</p>}
+      </details>)}
       {status && <p role={status === 'saveFailed' ? 'alert' : 'status'}>{t(status)}</p>}
     </div>
   </Modal>

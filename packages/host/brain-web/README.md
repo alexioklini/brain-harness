@@ -30,6 +30,8 @@ Controller-owned API clients can send HTTP Basic credentials on authenticated ro
 
 The browser signs in at `POST /_brain/login` and signs out at `POST /_brain/logout`. Conversation choices under `/_brain/conversations/` persist in a parent-only sibling directory, separately by account and chat. Project access is checked before saving and again before inference. Privacy reads under `/_brain/privacy/` derive the session identifier from the signed-in account. Application calls under `/_brain/application/` use the account's private Brain cookie. Worker Router requests accept only model discovery, central-tool policy, authorized conversation instructions and Responses, with identity and session metadata derived by the gateway. HTTP request limits and cancellation apply to streaming. WebSocket upgrades use the same account validation and only the assigned worker cookie; logout, session expiry, shutdown and request deadlines close the stream. Responses events use standard SSE dispatch, so an event header without data is ignored. The latest inference request’s central-tool execution evidence is retained separately for the account and conversation; auxiliary title requests do not replace it. The worker’s default workspace lives inside its private home. Restarting the gateway expires browser logins but retains account storage.
 
+Project uploads are bounded JSON/base64 requests converted to Brain’s authenticated multipart upload. The gateway rechecks project access before retrieval and after the central RAG response. Retrieved excerpts return only to the assigned worker for recorded prompt assembly. MoA diagnostics are fetched using the service-issued run ID and the same account principal and session; a missing diagnostic is reported as failed evidence.
+
 <a id="model-experience"></a>
 ## Model Experience
 
@@ -51,7 +53,7 @@ Changing project instructions or research mode changes the recorded system promp
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- This is an unfinished integration. The gateway and isolated worker startup have local smoke coverage. Project selection, privacy controls, MoA and research still require live acceptance; project management remains unfinished. The gateway currently retains workers until process exit or shutdown; `maxUsers` bounds capacity. The initial gateway is deployed for acceptance with dedicated Brain test accounts; it is not a completed feature release.
+- This is an unfinished integration. The gateway and isolated worker startup have local smoke coverage. Project selection, privacy controls, MoA and research still require live acceptance; project-document retrieval still requires live acceptance. The gateway currently retains workers until process exit or shutdown; `maxUsers` bounds capacity. The initial gateway is deployed for acceptance with dedicated Brain test accounts; it is not a completed feature release.
 
 <a id="dev-note"></a>
 ### Dev Note
