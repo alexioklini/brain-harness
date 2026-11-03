@@ -12472,6 +12472,10 @@ importers:
         version: link:../../core/tools
 
   packages/host/brain-central-client:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~

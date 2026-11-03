@@ -12,8 +12,11 @@
   en: 8afa399fc49fd71e
   zh: 42bde449a36c4afd
 /brain-central-client/table-of-contents:
-  en: a1bce86fbb5a28ba
-  zh: 9f248730189f215f
+  en: 4f8e030ca1bca173
+  zh: 662903ecf8a1a214
+/brain-central-client/account-authorization:
+  en: 551c36b0995f5e3e
+  zh: 8dd2fa1d7b7d8fdc
 /brain-central-client/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
@@ -30,8 +33,8 @@
   en: 4b06aac3ee874085
   zh: 51693eec0a07ae85
 /brain-central-client/known-limitations-and-deferred-work:
-  en: 2d60c072084e6952
-  zh: 3603c953cae470a6
+  en: ddd7c25fd6cd32ab
+  zh: ede76d292de19170
 /brain-central-client/known-limitations-and-deferred-work/dev-note:
   en: d1b9eaa79622849a
   zh: c81decce5d4e6043

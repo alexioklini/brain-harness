@@ -15,9 +15,15 @@ Configure `baseURL` with the Router API prefix, for example `https://router.exam
 
 ## Table of Contents
 
+- [Account authorization](#account-authorization)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
+
+<a id="account-authorization"></a>
+## Account authorization
+
+`BrainAccountClient` uses the existing Brain `/api/anmeldung` and `/api/ich` APIs. Its server-owned login retains the session cookie privately. Each authorization reloads the user and teams, rejects an identity change, and checks the selected project through Brain. It derives different storage and chat identifiers for different accounts, even when their application API key is shared. Closing a login immediately prevents further local authorization; it does not revoke the upstream Brain session. The caller must keep each user's runtime separate and must not serialize the login capability to the browser.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -40,7 +46,7 @@ Transport metadata does not change the model-visible prefix; current Router cont
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- This library alone does not mount an agent preset, authenticate web users or expose a browser UI. Model streaming, RAG projects, MoA, research and scheduled-task interfaces require their owning integrations. Live-service acceptance remains required before deployment.
+- This library alone does not mount an agent preset, mount a browser login or isolate web runtimes. Model streaming, RAG projects, MoA, research and scheduled-task interfaces require their owning integrations. Live-service acceptance remains required before deployment.
 
 <a id="dev-note"></a>
 ### Dev Note
