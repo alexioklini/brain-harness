@@ -1,0 +1,5 @@
+.root { min-height: 100dvh; box-sizing: border-box; display: grid; place-items: center; padding: 24px; font-family: var(--dsw-font-family); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); }
+.root form { width: min(100%, 360px); display: grid; gap: 20px; }
+.root h1 { margin: 0; font-size: 24px; }
+.root label { display: grid; gap: 8px; }
+.root p { margin: 0; }

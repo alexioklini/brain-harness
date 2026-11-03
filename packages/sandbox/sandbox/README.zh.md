@@ -160,6 +160,8 @@ sandbox mode "<mode>" is requested but no sandbox backend is usable on this host
 
 <a id="known-limitations-and-deferred-work"></a>
 
+显式 `readableRoots` 将文件内容读取限制在指定的物理目录内。macOS Seatbelt 支持此策略；其他后端和自定义运行器会拒绝它。这是进程限制，不是网络隔离。省略读取授权时保留原有行为。
+
 
 这些限制说明该 seam 何时不合适，或何时需要特别运维。它们是当前包约束，不是通用沙箱对比或任务积压。
 

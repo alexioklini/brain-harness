@@ -125,6 +125,8 @@ No direct invalidation; the named consumers own any request-prefix changes.
 
 ## Known Limitations and Deferred Work
 
+Explicit `readableRoots` restrict file-content reads to physical directories. The macOS Seatbelt provider supports this policy; other backends and custom runners reject it. This is process confinement, not network isolation. Omitted read grants preserve existing behavior.
+
 <a id="known-limitations-and-deferred-work"></a>
 
 

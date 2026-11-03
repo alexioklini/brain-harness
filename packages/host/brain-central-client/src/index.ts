@@ -42,7 +42,7 @@ export class BrainCentralClient {
    * @returns Decoded service response.
    */
   async request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<CentralObject> {
-    return (await this.transport.request(path, body, signal)).data
+    return centralObject((await this.transport.request(path, body, signal)).data)
   }
 
   /** Retrieve the current authorized model catalog; an outage remains an error.

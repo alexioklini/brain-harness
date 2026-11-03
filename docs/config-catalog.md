@@ -471,6 +471,57 @@ export type Config = LocalConfig
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-bash-sandbox -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-brain-web -->
+<a id="deepseek-aidsh-brain-web"></a>
+
+## `@deepseek-ai/dsh-brain-web`
+
+- `inject`: `webServer` · `subprocess` · `credentials` · `sandbox`
+- `source`: [`packages/host/brain-web/src/types.ts:6`](../packages/host/brain-web/src/types.ts)
+
+```ts config-catalog
+/** Explicit deployment limits and paths. */
+export interface GatewayConfig {
+  /** Public HTTPS origin, or HTTP 127.0.0.1 for local preview, used for browser origin checks. */
+  publicURL: string
+  /** Existing Brain account API origin. */
+  brainURL: string
+  /** LLMRouter origin, without an API path. */
+  routerURL: string
+  /** Parent-only shared Router credential reference. */
+  routerCredential: string
+  /** Physical directory containing separate account homes. */
+  storageRoot: string
+  /** Built supported dsh CLI entrypoint. */
+  cliBin: string
+  /** Reviewed central-only worker profile patch. */
+  workerPatch: string
+  /** Node executable used for worker processes. */
+  nodeBin: string
+  /** Initial authorized Router model identifier. */
+  defaultModel: string
+  /** Maximum concurrently retained user runtimes. */
+  maxUsers: number
+  /** Maximum retained browser and automation logins. */
+  maxLogins: number
+  /** Browser login lifetime in milliseconds. */
+  sessionMs: number
+  /** Maximum worker startup duration in milliseconds. */
+  startupTimeoutMs: number
+  /** Request deadline including streamed responses. */
+  requestTimeoutMs: number
+  /** Maximum accepted upload and JSON response bytes. */
+  maxBodyBytes: number
+  /** Grace period before forced process termination. */
+  shutdownGraceMs: number
+  /** Built login HTML entrypoint. */
+  loginIndex: string
+  /** Physical artifact and system directories readable by workers; may not overlap user storage. */
+  workerReadableRoots: string[]
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-brain-web -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-connection -->
 <a id="deepseek-aidsh-client-connection"></a>
 

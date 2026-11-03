@@ -325,6 +325,9 @@ export class LocalSandboxProvider extends SandboxProvider {
   async confine(argv: readonly string[], policy: SandboxPolicy, signal?: AbortSignal): Promise<ConfinedArgv> {
     signal?.throwIfAborted()
     policy = { ...policy, workspaceRoot: canonicalPath(policy.workspaceRoot) }
+    if (policy.readableRoots !== undefined && (this.runnerCommand !== undefined || process.platform !== 'darwin')) {
+      throw new SandboxUnsupportedPolicyError('Exclusive read grants require the macOS Seatbelt provider')
+    }
     if (this.runnerCommand !== undefined) {
       return Promise.resolve<ConfinedArgv>({
         argv: [...this.runnerCommand, ...bwrapProfileArgs(policy), '--', ...argv],

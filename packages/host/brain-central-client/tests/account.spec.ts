@@ -68,3 +68,22 @@ it('does not authorize an in-flight request after its login is closed', async ()
   pending.resolve(reply(alice))
   await expect(authorization).rejects.toThrow('sign in again')
 })
+
+it('reads account-owned project lists with the private login and fresh identity', async () => {
+  const projects = [{ id: 'project-a', name: 'Research' }]
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(reply(alice, true))
+    .mockResolvedValueOnce(reply(alice)).mockResolvedValueOnce(reply(projects))
+  vi.stubGlobal('fetch', fetcher)
+  const login = await client().login('alice', 'fixture')
+  expect(await login.request('/api/projekte')).toEqual(projects)
+  expect(fetcher.mock.calls[2]![1]?.headers).toMatchObject({ cookie: `fmsitzung=${'a'.repeat(64)}` })
+})
+
+it('rejects application login replacement and prevents reads after identity changes', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(reply(alice, true)).mockResolvedValueOnce(reply(bob))
+  vi.stubGlobal('fetch', fetcher)
+  const login = await client().login('alice', 'fixture')
+  await expect(login.request('/api/anmeldung', { anmeldename: 'bob' })).rejects.toThrow('Invalid Brain application path')
+  await expect(login.request('/api/projekte')).rejects.toThrow('account changed')
+  expect(fetcher).toHaveBeenCalledTimes(2)
+})

@@ -48,6 +48,13 @@ export interface BrainAccountSession {
   }>
   /** Forget the local login immediately; subsequent requests must sign in again. */
   close(): void
+  /** Call a Brain application API with this login after checking its current identity.
+   * @param path - Relative application API path.
+   * @param body - Optional JSON request body.
+   * @param signal - Caller cancellation.
+   * @returns Decoded application data, including list responses.
+   */
+  request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<unknown>
 }
 
 /** Authenticate existing Brain users without creating another account database. */
@@ -63,7 +70,7 @@ export class BrainAccountClient {
   async login(username: string, password: string, signal?: AbortSignal): Promise<BrainAccountSession> {
     const transport = new JSONTransport({ ...this.connection, headers: () => ({}) })
     const result = await transport.request('/api/anmeldung', { anmeldename: username, passwort: password }, signal)
-    const owner = account(result.data)
+    const owner = account(centralObject(result.data))
     const cookies = result.headers.getSetCookie().filter(value => value.startsWith('fmsitzung='))
     if (cookies.length !== 1) throw new Error('Brain session cookie is missing or ambiguous')
     const cookieValue = cookies[0]?.match(/^(fmsitzung=[a-f0-9]{64})(?:;|$)/)?.[1]
@@ -73,14 +80,27 @@ export class BrainAccountClient {
       if (!cookie) throw new Error('Brain sign-in required')
       return { cookie }
     } })
+    const verify = async (abort?: AbortSignal): Promise<BrainAccount> => {
+      const current = account(centralObject((await authenticated.request('/api/ich', undefined, abort)).data))
+      if (!cookie || current.id !== owner.id) throw new Error('Brain account changed; sign in again')
+      return current
+    }
     return {
       storageKey: `user-${digest(owner.id)}`,
       close: () => { cookie = undefined },
+      request: async (path, body, abort) => {
+        if (!path.startsWith('/api/') || path === '/api/anmeldung' || path === '/api/abmeldung') {
+          throw new Error('Invalid Brain application path')
+        }
+        await verify(abort)
+        const result = await authenticated.request(path, body, abort)
+        if (!cookie) throw new Error('Brain sign-in required')
+        return result.data
+      },
       authorize: async (chat, project, abort) => {
         if (!chat || chat.length > 256) throw new Error('Invalid Brain chat identifier')
         if (project !== undefined && !/^[A-Za-z0-9_-]{1,128}$/.test(project)) throw new Error('Invalid Brain project')
-        const current = account((await authenticated.request('/api/ich', undefined, abort)).data)
-        if (!cookie || current.id !== owner.id) throw new Error('Brain account changed; sign in again')
+        const current = await verify(abort)
         if (project !== undefined) {
           await authenticated.request(`/api/projekte/${project}`, undefined, abort)
           if (!cookie) throw new Error('Brain sign-in required')

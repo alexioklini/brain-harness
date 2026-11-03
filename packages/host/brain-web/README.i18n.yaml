@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/host/brain-web/README.md
+/:
+  en: c663993c9af3e460
+  zh: a9f26f191e73df8a
+/brain-web:
+  en: cfea2e224e5fc109
+  zh: 5b5977e6e9d70a28
+/brain-web/summary:
+  en: 096dad5c9a3f949d
+  zh: 3fe03989e61db2ff
+/brain-web/table-of-contents:
+  en: 7f0320b84d1625c9
+  zh: 4e813af53e739727
+/brain-web/deployment:
+  en: 2eff0d92bbd23fbf
+  zh: 1f152f1813f8e834
+/brain-web/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/brain-web/model-experience/account-scoped-requests:
+  en: f81e641e4fb02b35
+  zh: eaedbc78c4a96ea2
+/brain-web/model-experience/account-scoped-requests/what-the-model-sees:
+  en: b2d24e28a518c7a8
+  zh: 6d64781382b2d735
+/brain-web/model-experience/account-scoped-requests/token-effect:
+  en: abab5491ab63e126
+  zh: 9ce78b62b1a226b6
+/brain-web/model-experience/account-scoped-requests/kv-cache-effect:
+  en: a6d0dc2e0413870e
+  zh: c7ffbefddcb71b17
+/brain-web/known-limitations-and-deferred-work:
+  en: 316e8c4bfa335bef
+  zh: 45f2a9302ece04f1
+/brain-web/known-limitations-and-deferred-work/dev-note:
+  en: aaf9939059cb96e6
+  zh: ef358ae0f5a1c9d3

@@ -276,6 +276,7 @@
   "references": [
     { "path": "./packages/llm/llm-brain" },
     { "path": "./packages/host/brain-central-client" },
+    { "path": "./packages/host/brain-web" },
     { "path": "./packages/experimental/action-cards" },
     { "path": "./packages/experimental/creation-recommendations" },
     { "path": "./packages/experimental/plugin-recommendations" },

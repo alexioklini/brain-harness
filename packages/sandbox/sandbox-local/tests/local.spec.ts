@@ -544,3 +544,11 @@ describe('the windows-acl probe (runner invocation contract)', () => {
     expect(confined.argv.slice(0, 2)).toEqual([process.execPath, builtEntry])
   })
 })
+
+it('rejects exclusive read grants on a custom runner instead of dropping them', async () => {
+  const { ctx, sandbox } = await setup({ runnerCommand: ['custom-runner'], runnerFailureSignatures: ['failed'] })
+  try {
+    await expect(sandbox.confine(['/bin/true'], { ...RO, readableRoots: [] }))
+      .rejects.toThrow('Exclusive read grants require the macOS Seatbelt provider')
+  } finally { await ctx.fiber.dispose() }
+})

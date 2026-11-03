@@ -1,0 +1,16 @@
+# Dedicated gateway profile. User agents run only in separately confined workers.
+- insert:
+    - id: credentials
+      name: '@deepseek-ai/dsh-credentials-local'
+    - id: subprocess
+      name: '@deepseek-ai/dsh-subprocess-local'
+    - id: sandbox
+      name: '@deepseek-ai/dsh-sandbox-local'
+    - id: webserver
+      name: '@deepseek-ai/dsh-host-webserver'
+      config:
+        host: 127.0.0.1
+        port: !!js Number(process.env.BRAIN_GATEWAY_PORT)
+    - id: brain-web
+      name: '@deepseek-ai/dsh-brain-web'
+      config: !!js JSON.parse(process.env.BRAIN_GATEWAY_CONFIG)

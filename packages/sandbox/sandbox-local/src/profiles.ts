@@ -4,6 +4,8 @@
  * @module @deepseek-ai/dsh-sandbox-local/profiles
  */
 
+import { realpathSync, statSync } from 'node:fs'
+import { isAbsolute } from 'node:path'
 import { grantArgs as landlockGrantArgs } from '@deepseek-ai/node-addon-system/landlock-run'
 import { workspaceWritableRoots, writableRoots } from '@deepseek-ai/dsh-sandbox'
 import type { SandboxPolicy } from '@deepseek-ai/dsh-sandbox'
@@ -52,6 +54,16 @@ function sbplString(path: string): string {
  */
 export function seatbeltProfileArgs(policy: SandboxPolicy): string[] {
   const forms = ['(version 1)', '(allow default)', '(deny file-write*)', `(allow file-write* (literal ${sbplString('/dev/null')}))`]
+  if (policy.readableRoots !== undefined) {
+    const grants = policy.readableRoots.map((root) => {
+      if (!isAbsolute(root) || realpathSync.native(root) !== root || !statSync(root).isDirectory()) {
+        throw new Error('Read grants require physical absolute directories')
+      }
+      return `(subpath ${sbplString(root)})`
+    })
+    forms.push('(deny file-read-data)', '(allow file-read-data (literal "/"))')
+    if (grants.length) forms.push(`(allow file-read-data ${grants.join(' ')})`)
+  }
   const roots = writableRoots(policy)
   if (roots.length > 0) {
     forms.push(`(allow file-write* ${roots.map(root => `(subpath ${sbplString(root)})`).join(' ')})`)

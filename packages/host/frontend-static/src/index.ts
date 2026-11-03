@@ -90,7 +90,7 @@ function bytesBody(bytes: Uint8Array): ReadableStream<Uint8Array> {
  * `cache-control: no-cache` and a weak ETag from a SHA-1 of its bytes, and a
  * request whose `If-None-Match` equals that ETag receives an empty 304.
  */
-async function serveStatic(
+export async function serveStatic(
   request: Request, distRoot: string, distIndex: string,
   authorizeIndex: () => Response | undefined,
   renderIndex: (html: string) => string,

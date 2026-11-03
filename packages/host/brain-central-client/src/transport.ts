@@ -1,5 +1,5 @@
 /** Bounded host-only JSON transport shared by Brain account and Router clients. @module */
-import { BrainServiceError, centralObject } from './values.ts'
+import { BrainServiceError } from './values.ts'
 import type { CentralObject } from './values.ts'
 
 /** Host-owned endpoint, authentication and request bounds. */
@@ -31,9 +31,9 @@ export class JSONTransport {
    * @param path - Relative API path.
    * @param body - Optional JSON request body.
    * @param signal - Caller cancellation.
-   * @returns Decoded response object.
+   * @returns Decoded JSON value and response headers.
    */
-  async request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<{ data: CentralObject; headers: Headers }> {
+  async request(path: string, body?: CentralObject, signal?: AbortSignal): Promise<{ data: unknown; headers: Headers }> {
     if (!path.startsWith('/') || path.startsWith('//') || /[?#\\]/.test(path)
       || path.split('/').some(part => part === '.' || part === '..' || part.includes('%'))) {
       throw new Error('Invalid central API path')
@@ -73,7 +73,7 @@ export class JSONTransport {
     let value: unknown
     try { value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) }
     catch { throw new Error('Invalid central service JSON') }
-    return { data: centralObject(value), headers: response.headers }
+    return { data: value, headers: response.headers }
   }
 
 }
