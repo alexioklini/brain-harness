@@ -20,7 +20,7 @@ kind: package-bundle
 <a id="deployment"></a>
 ## 部署
 
-从干净且已推送的主源码目录 `main` 分支构建。`python3 scripts/release_guard.py` 检查该状态；`pnpm exec tsx scripts/package-brain.ts` 使用共享可执行文件打包辅助函数，将构建后的运行时、提交标识和归档校验和一起打包。
+从干净且已推送的主源码目录 `main` 分支构建。`python3 scripts/release_guard.py` 检查该状态；`pnpm exec tsx scripts/package-brain.ts` 使用共享可执行文件打包辅助函数，将构建后的运行时、提交标识和归档校验和一起打包。创建归档前，打包流程启动暂存的受限工作进程，要求工作区客户端入口和工作区初始化 RPC 可用。依赖检查遍历所有声明的工作区成员，包括 CLI 应用。
 
 自定义配置在 `dsh.profile.bundles` 中选择本包。组合挂载现有的凭据、子进程、沙盒和 HTTP 提供程序。`BRAIN_GATEWAY_PORT` 设置回环监听端口；`BRAIN_GATEWAY_CONFIG` 包含 JSON 格式的 `GatewayConfig`，其中只有地址、构建产物路径、资源限制和共享凭据引用，不包含凭据值。`routerURL` 是不带 `/v1` 的源地址；`brainURL` 是现有 Brain 源地址。`loginIndex` 指向构建后的 `brain-login.html`。
 

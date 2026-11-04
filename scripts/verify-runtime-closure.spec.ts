@@ -10,6 +10,8 @@ const roots: string[] = []
 function fixture(files: Record<string, string | Record<string, unknown>>): string {
   const root = mkdtempSync(join(tmpdir(), 'dsh-runtime-closure-'))
   roots.push(root)
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'fixture-root', private: true }))
+  writeFileSync(join(root, 'pnpm-workspace.yaml'), 'packages: [packages/*/*, vendor/*, apps/*, native/*, python/sdk-runtime]\n')
   for (const [relative, value] of Object.entries(files)) {
     const preset = /^preset:(.+)$/.exec(relative)
     const path = join(root, preset === null ? relative : `packages/bundle/web-app/presets/${preset[1]}.patch.yml`)
@@ -39,6 +41,19 @@ afterEach(() => {
 })
 
 describe('verifyRuntimeClosure', () => {
+  it('follows CLI application dependencies and rejects missing web-controller peers', async () => {
+    const root = fixture({
+      'python/sdk-runtime/package.json': { name: 'runtime', dependencies: { '@scope/cli': 'workspace:*' } },
+      'apps/cli/package.json': { name: '@scope/cli', dependencies: { '@scope/controller': 'workspace:*' } },
+    })
+    workspace(root, '@scope/controller', { peerDependencies: { '@scope/picker': 'workspace:*' } })
+    workspace(root, '@scope/picker', {})
+    expect((await verifyRuntimeClosure(root, 'python/sdk-runtime/package.json', false)).failures)
+      .toEqual(['runtime -> @scope/cli -> @scope/controller -> @scope/picker'])
+    writeFileSync(join(root, 'python/sdk-runtime/package.json'), JSON.stringify({ name: 'runtime',
+      dependencies: { '@scope/cli': 'workspace:*', '@scope/picker': 'workspace:*' } }))
+    expect((await verifyRuntimeClosure(root, 'python/sdk-runtime/package.json', false)).failures).toEqual([])
+  })
   it('checks a private worker closure without requiring application presets', async () => {
     const manifestPath = 'packages/ssh/ssh-helper-runtime/package.json'
     const root = fixture({ [manifestPath]: { name: 'helper', dependencies: { '@scope/worker': 'workspace:^' } } })

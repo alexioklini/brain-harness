@@ -28,6 +28,10 @@ try {
 await restoreLegacyHoists(destination, join(root, 'python/sdk-runtime/node_modules'))
 await materializeStagedLinks(destination)
 await deduplicateStagedWorkspacePackages(destination, root)
+execFileSync(process.execPath, [join(root, 'node_modules/vitest/vitest.mjs'), 'run', '--config',
+  'vitest.expected.config.ts', 'apps/cli/tests/profiles/web/tests/brain-worker.expected.e2e.ts'], {
+  cwd: root, stdio: 'inherit', env: { ...process.env, DSH_BRAIN_TEST_RUNTIME: destination },
+})
 execFileSync(process.execPath, [join(destination, 'node_modules/@deepseek-ai/dsh/lib/bin.js'), '--version'], { stdio: 'inherit' })
 await writeFile(join(destination, 'brain-release.json'), JSON.stringify({ commit, platform: process.platform, arch: process.arch }) + '\n')
 const archive = destination + '.tar.gz'

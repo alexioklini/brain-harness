@@ -18279,6 +18279,12 @@ importers:
       '@deepseek-ai/dsh-client-file-upload':
         specifier: workspace:*
         version: link:../../packages/client/file-upload
+      '@deepseek-ai/dsh-client-ui-directory-picker-browse':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-directory-picker-browse
+      '@deepseek-ai/dsh-client-ui-directory-picker-native':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-directory-picker-native
       '@deepseek-ai/dsh-cmdline':
         specifier: workspace:*
         version: link:../../packages/boot/cmdline
@@ -18306,6 +18312,9 @@ importers:
       '@deepseek-ai/dsh-compaction-tool-result-pruner':
         specifier: workspace:*
         version: link:../../packages/compaction/compaction-tool-result-pruner
+      '@deepseek-ai/dsh-computer-use':
+        specifier: workspace:*
+        version: link:../../packages/computer-use/computer-use
       '@deepseek-ai/dsh-config-editor':
         specifier: workspace:*
         version: link:../../packages/boot/config-editor
@@ -18321,6 +18330,18 @@ importers:
       '@deepseek-ai/dsh-deepseek-llm-api-extensions':
         specifier: workspace:*
         version: link:../../packages/llm/deepseek-llm-api-extensions
+      '@deepseek-ai/dsh-experimental-forge':
+        specifier: workspace:*
+        version: link:../../packages/experimental/forge
+      '@deepseek-ai/dsh-experimental-speech-to-text':
+        specifier: workspace:*
+        version: link:../../packages/experimental/speech-to-text
+      '@deepseek-ai/dsh-experimental-translator':
+        specifier: workspace:*
+        version: link:../../packages/experimental/translator
+      '@deepseek-ai/dsh-experimental-worktree':
+        specifier: workspace:*
+        version: link:../../packages/experimental/worktree
       '@deepseek-ai/dsh-file-reference':
         specifier: workspace:*
         version: link:../../packages/context/file-reference
@@ -18345,6 +18366,15 @@ importers:
       '@deepseek-ai/dsh-home-paths':
         specifier: workspace:*
         version: link:../../packages/util/home-paths
+      '@deepseek-ai/dsh-host-directory-picker':
+        specifier: workspace:*
+        version: link:../../packages/host/directory-picker
+      '@deepseek-ai/dsh-host-directory-picker-browse':
+        specifier: workspace:*
+        version: link:../../packages/host/directory-picker-browse
+      '@deepseek-ai/dsh-host-directory-picker-native':
+        specifier: workspace:*
+        version: link:../../packages/host/directory-picker-native
       '@deepseek-ai/dsh-host-frontend-static':
         specifier: workspace:*
         version: link:../../packages/host/frontend-static

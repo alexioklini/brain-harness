@@ -9,6 +9,7 @@ import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { isCordisGroupEntry, loadCordisYaml, presetDefinitions } from './cordis-yaml.ts'
+import { readWorkspaceManifests } from './check-workspace-constraints.ts'
 
 interface PackageManifest {
   name?: string
@@ -203,11 +204,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function loadWorkspacePackages(root: string): Promise<Map<string, WorkspacePackage>> {
-  const paths = globSync(['packages/*/*/package.json', 'vendor/*/package.json'], { cwd: root })
-    .sort()
-    .map(relative => resolve(root, relative))
   const result = new Map<string, WorkspacePackage>()
-  for (const path of paths) {
+  for (const { dir } of readWorkspaceManifests(root)) {
+    const path = resolve(root, dir, 'package.json')
     const manifest = await loadManifest(path)
     if (manifest.name !== undefined) result.set(manifest.name, { path, manifest })
   }

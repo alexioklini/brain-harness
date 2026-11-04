@@ -20,7 +20,7 @@ This Cordis plugin authenticates existing Brain accounts, owns a separate Harnes
 <a id="deployment"></a>
 ## Deployment
 
-Build from the primary source checkout on clean, pushed `main`. `python3 scripts/release_guard.py` checks that state; `pnpm exec tsx scripts/package-brain.ts` packages the built runtime with its commit and archive checksum using the shared executable packaging helpers.
+Build from the primary source checkout on clean, pushed `main`. `python3 scripts/release_guard.py` checks that state; `pnpm exec tsx scripts/package-brain.ts` packages the built runtime with its commit and archive checksum using the shared executable packaging helpers. Packaging boots the staged, confined worker and requires its workspace client entry and workspace initialization RPC before creating the archive. The dependency check follows every declared workspace member, including CLI applications.
 
 A custom profile selects this package in `dsh.profile.bundles`. Its bundle mounts the existing credential, subprocess, sandbox and HTTP providers. `BRAIN_GATEWAY_PORT` sets a loopback listener; `BRAIN_GATEWAY_CONFIG` contains the JSON `GatewayConfig`. That configuration carries addresses, artifact paths, resource limits and the shared credential reference, never the credential value. `routerURL` is an origin without `/v1`; `brainURL` is the existing Brain origin. `loginIndex` points to the built `brain-login.html`.
 

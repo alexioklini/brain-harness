@@ -13,6 +13,8 @@ import { expect, it } from 'vitest'
 import { UserWorkers } from '@deepseek-ai/dsh-brain-web/src/workers.ts'
 
 const repo = fileURLToPath(new URL('../../../../../../', import.meta.url))
+const runtime = process.env.DSH_BRAIN_TEST_RUNTIME
+const cli = runtime ? join(runtime, 'node_modules/@deepseek-ai/dsh') : join(repo, 'apps/cli')
 it.runIf(process.platform === 'darwin')('starts the confined web worker and reuses it only for the same account', async () => {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'brain-worker-built-')))
   const ctx = new Context()
@@ -23,7 +25,7 @@ it.runIf(process.platform === 'darwin')('starts the confined web worker and reus
     workers = new UserWorkers(ctx, {
       publicURL: 'https://brain-harness.example', brainURL: 'http://127.0.0.1:1', routerURL: 'http://127.0.0.1:1',
       routerCredential: 'FIXTURE', storageRoot: join(root, 'users'),
-      cliBin: join(repo, 'apps/cli/lib/bin.js'), workerPatch: join(repo, 'apps/cli/config/examples/brain.patch.yml'),
+      cliBin: join(cli, 'lib/bin.js'), workerPatch: join(cli, 'config/examples/brain.patch.yml'),
       nodeBin: process.execPath, defaultModel: 'fixture', maxUsers: 2, maxLogins: 8, sessionMs: 60000,
       startupTimeoutMs: 30000, requestTimeoutMs: 5000, maxBodyBytes: 1048576, shutdownGraceMs: 1000,
       loginIndex: join(repo, 'apps/web/dist/brain-login.html'),
@@ -45,7 +47,16 @@ it.runIf(process.platform === 'darwin')('starts the confined web worker and reus
     expect(await workers.byToken('b'.repeat(64))).toBeUndefined()
     const response = await fetch(first.origin, { headers: { cookie: first.cookie } })
     expect(response.status).toBe(200)
-    expect(await response.text()).toContain('<html')
+    const html = await response.text()
+    expect(html).toContain('<html')
+    expect(html).toContain('"id":"@deepseek-ai/dsh-api-workspace-controller"')
+    const workspace = await fetch(new URL('/api/workspace/initializeDefault', first.origin), {
+      method: 'POST', headers: { cookie: first.cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ type: 'client-request', rpcId: 'workspace-boot', method: 'workspace/initializeDefault',
+        payload: { args: {} } }),
+    })
+    expect(workspace.status).toBe(200)
+    expect(await workspace.json()).toMatchObject({ result: { ok: true } })
   } finally {
     await workers?.close()
     await ctx.fiber.dispose()
